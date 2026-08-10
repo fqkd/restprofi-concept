@@ -42,11 +42,12 @@ npm run preview
 QA_BASE_URL=http://127.0.0.1:4173/restprofi-concept/ node scripts/qa.mjs
 ```
 
-`scripts/qa.mjs` открывает ключевые состояния на ширинах 360, 390, 430, 768 и 1440 px, проверяет ошибки браузера и горизонтальное переполнение.
+`scripts/qa.mjs` проверяет экраны прототипа на 360, 390, 430 и 1440 px, презентацию на 390, 768 и 1440 px, горизонтальное переполнение, консоль, прямые ссылки и пути заказа, бронирования и торта.
 
 ## Маршруты
 
 - `/` — оболочка интерактивного прототипа;
+- `/#/order` — выбор бренда перед форматом получения;
 - `/#/brand/pitcofe/format` — выбор доставки или самовывоза;
 - `/#/brand/pitcofe/menu` — меню выбранного бренда;
 - `/#/booking` — бронирование;
@@ -62,4 +63,3 @@ QA_BASE_URL=http://127.0.0.1:4173/restprofi-concept/ node scripts/qa.mjs
 `npm run build` создаёт независимый production build в `dist/`, включая `dist/case/index.html`. Base path установлен в `/restprofi-concept/`. Workflow `.github/workflows/pages.yml` запускает чистую установку, линтер, тесты, сборку и отдельный deployment GitHub Pages из ветки `main`.
 
 Исследовательские источники и границы достоверности перечислены в [SOURCES.md](./SOURCES.md).
-

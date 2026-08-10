@@ -134,7 +134,7 @@ blockquote small { display: block; font-family: Manrope, sans-serif; color: #7b7
 .mock-location span { display: flex; flex-direction: column; }
 .mock-location b { font-size: 8px; }
 .mock-location small { color: #777168; font-size: 7px; margin-top: 3px; }
-.case-phone > button { border: 0; position: absolute; bottom: 24px; left: 20px; right: 20px; height: 48px; background: var(--ink); color: white; border-radius: 15px; font-size: 9px; font-weight: 700; }
+.case-phone > .mock-button { border: 0; position: absolute; bottom: 24px; left: 20px; right: 20px; height: 48px; background: var(--ink); color: white; border-radius: 15px; font-size: 9px; font-weight: 700; display: grid; place-items: center; }
 .booking { grid-template-columns: .85fr .8fr .7fr; }
 .booking-timeline { display: grid; gap: 8px; align-content: center; }
 .booking-timeline div { min-height: 108px; border: 1px solid rgba(23,23,20,.1); background: rgba(255,255,255,.58); border-radius: 20px; display: flex; flex-direction: column; justify-content: center; padding: 20px; }
