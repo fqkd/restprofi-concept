@@ -39,7 +39,7 @@ npm run build
 
 ```bash
 npm run preview
-QA_BASE_URL=http://127.0.0.1:4173/restprofi-concept/ node scripts/qa.mjs
+QA_BASE_URL=http://127.0.0.1:4173/restprofi-concept/ npm run qa
 ```
 
 `scripts/qa.mjs` проверяет экраны прототипа на 360, 390, 430 и 1440 px, презентацию на 390, 768 и 1440 px, горизонтальное переполнение, консоль, прямые ссылки и пути заказа, бронирования и торта.

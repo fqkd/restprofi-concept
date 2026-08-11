@@ -34,7 +34,7 @@ export function CasePage() {
     <div className="case-controls"><button aria-label="Предыдущий раздел" disabled={active === 0} onClick={() => move(active - 1)}><ChevronLeft /></button><button aria-label="Следующий раздел" disabled={active === sections.length - 1} onClick={() => move(active + 1)}><ChevronRight /></button></div>
 
     <section className="case-section cover" id="section-0" data-index="0">
-      <div className="cover-copy"><p className="case-eyebrow">Инициативная концепция · 10 августа 2026</p><h1>Сначала задача.<br /><em>Потом бренд.</em></h1><p className="case-lead">Мобильный вход в сервисы УК «РестПрофи», где доставка, бронирование и заказ торта остаются в контексте конкретного бренда.</p><div className="button-row"><a className="case-button dark" href={`${prototype}/`}><Play /> Открыть прототип</a><button className="case-button light" onClick={() => move(1)}>Как пришли к идее <ArrowDown /></button></div></div>
+      <div className="cover-copy"><p className="case-eyebrow">Инициативная концепция · 11 августа 2026</p><h1>Сначала задача.<br /><em>Потом бренд.</em></h1><p className="case-lead">Мобильный вход в сервисы УК «РестПрофи», где доставка, бронирование и заказ торта остаются в контексте конкретного бренда.</p><div className="button-row"><a className="case-button dark" href={`${prototype}/`}><Play /> Открыть прототип</a><button className="case-button light" onClick={() => move(1)}>Как пришли к идее <ArrowDown /></button></div></div>
       <div className="cover-visual" aria-label="Схема концепции"><div className="orbit-card orbit-main"><span>RP</span><b>Выберите задачу</b><small>заказ · столик · торт</small></div><div className="orbit-card brand-one"><i>ПК</i><b>Питькофе</b></div><div className="orbit-card brand-two"><i>MD</i><b>MamaDonna</b></div><div className="orbit-card brand-three"><i>ЕТ</i><b>ЕстьТорт</b></div><svg viewBox="0 0 600 600" aria-hidden="true"><circle cx="300" cy="300" r="218"/><circle cx="300" cy="300" r="140"/></svg></div>
       <FooterMark number="01" />
     </section>
@@ -45,14 +45,14 @@ export function CasePage() {
         <article><Coffee /><b>Питькофе</b><p>Официальный сайт показывает доставку, навынос, меню и кофейни в нескольких городах. Действующее приложение найдено в App Store и Google Play.</p><small>pitcofe.ru · магазины приложений</small></article>
         <article><Store /><b>MamaDonna</b><p>На официальном сайте доступны доставка, навынос, заказ в кафе, два адреса и отдельные правила бонусной программы.</p><small>mamadonna.ru</small></article>
         <article><CakeSlice /><b>ЕстьТорт и Cream</b><p>ЕстьТорт предлагает отдельный каталог тортов и согласование заказа. Официальная страница ЕстьТорт также упоминает витрину Cream.</p><small>esttort.ru</small></article>
-        <article className="fact-note"><BadgeCheck /><b>Граница достоверности</b><p>Связь Питькофе с ООО «УК РестПрофи» подтверждается карточкой App Store. Актуальный состав всей группы и общность правил лояльности требуют внутреннего подтверждения.</p><small>Проверено 10.08.2026</small></article>
+        <article className="fact-note"><BadgeCheck /><b>Граница достоверности</b><p>Связь Питькофе с ООО «УК РестПрофи» подтверждается карточкой App Store. Актуальный состав всей группы и общность правил лояльности требуют внутреннего подтверждения.</p><small>Проверено 11.08.2026</small></article>
       </div>
       <FooterMark number="02" />
     </section>
 
     <section className="case-section pains" id="section-2" data-index="2">
-      <div className="section-heading"><p className="case-eyebrow">Проверяемые точки роста</p><h2>Пользователь выбирает<br />не меню. Он выбирает действие.</h2></div>
-      <div className="pain-layout"><div className="quote-stack"><blockquote>«Невозможно сделать заказ»<small>Отдельный отзыв в App Store, 01.06.2026</small></blockquote><blockquote>«Где поиск, где сопутствующие позиции меню?»<small>Отдельный отзыв в Google Play, проверено 10.08.2026</small></blockquote><blockquote>После оформления появляется бесконечная загрузка<small>Мотив из отдельного отзыва Google Play</small></blockquote></div><div className="hypothesis"><CircleAlert /><p>Отзывы — не доказательство системного сбоя, а источник гипотез для проверки.</p><ol><li><span>01</span>Можно ли раньше зафиксировать формат и точку?</li><li><span>02</span>Сохранится ли корзина после ошибки?</li><li><span>03</span>Сократится ли повтор привычного заказа?</li></ol></div></div>
+      <div className="section-heading"><p className="case-eyebrow">Проверяемые точки роста</p><h2>Сценарий начинается<br />с нужного действия</h2></div>
+      <div className="pain-layout"><div className="quote-stack"><blockquote>Завершение оформления<small>Отдельный отзыв App Store упоминает незавершённый заказ, 01.06.2026</small></blockquote><blockquote>Поиск и дополнения к заказу<small>Отдельный отзыв Google Play, проверено 11.08.2026</small></blockquote><blockquote>Состояние после отправки заказа<small>Отдельный отзыв Google Play упоминает длительную загрузку</small></blockquote></div><div className="hypothesis"><CircleAlert /><p>Отдельные отзывы используются только для формулировки гипотез и не описывают частоту проблем.</p><ol><li><span>01</span>Можно ли раньше зафиксировать формат и точку?</li><li><span>02</span>Сохранится ли корзина после ошибки?</li><li><span>03</span>Сократится ли повтор привычного заказа?</li></ol></div></div>
       <FooterMark number="03" />
     </section>
 
@@ -78,7 +78,7 @@ export function CasePage() {
     </section>
 
     <section className="case-section scenario cake" id="section-6" data-index="6">
-      <div className="section-heading"><p className="case-eyebrow">Ключевой сценарий № 3</p><h2>Торт — отдельный заказ,<br />а не карточка в общей ленте</h2><p>Категория, начинка, вес и дата формируют заявку. Декор, цена и доступность остаются предметом подтверждения кондитером.</p><a className="case-button cream-button" href={`${prototype}/cake`}><Play /> Посмотреть сценарий</a></div>
+      <div className="section-heading"><p className="case-eyebrow">Ключевой сценарий № 3</p><h2>Для торта —<br />отдельный путь заказа</h2><p>Категория, начинка, вес и дата формируют заявку. Декор, цена и доступность остаются предметом подтверждения кондитером.</p><a className="case-button cream-button" href={`${prototype}/cake`}><Play /> Посмотреть сценарий</a></div>
       <div className="cake-spec"><CakeSlice /><div><span>01</span><b>Повод</b><small>праздничный, детский, свадебный</small></div><div><span>02</span><b>Основа</b><small>начинка и вес</small></div><div><span>03</span><b>Срок</b><small>дата и контакт для согласования</small></div></div>
       <PhoneMock kind="cake" />
       <FooterMark number="07" />
@@ -86,7 +86,7 @@ export function CasePage() {
 
     <section className="case-section architecture" id="section-7" data-index="7">
       <div className="section-heading"><p className="case-eyebrow">Связь с бизнесом</p><h2>Единый вход там,<br />где это удобно пользователю</h2></div>
-      <div className="architecture-grid"><article className="shell-card"><Layers3 /><h3>Общая оболочка</h3><ul><li>выбор задачи</li><li>переключение бренда</li><li>история действий</li><li>персональные рекомендации</li></ul></article><article className="brand-card"><Coffee /><h3>Контекст бренда</h3><ul><li>своё меню</li><li>свои условия получения</li><li>отдельная корзина</li><li>свои правила лояльности</li></ul></article><article className="restore-card"><PackageCheck /><h3>Восстановление</h3><p>После демонстрационной ошибки сохраняются корзина, адрес и формат. Пользователь возвращается к оплате, а не к началу заказа.</p><a href={`${prototype}/payment-error`}>Открыть состояние <ArrowRight /></a></article></div>
+      <div className="architecture-grid"><article className="shell-card"><Layers3 /><h3>Общая оболочка</h3><ul><li>выбор задачи</li><li>переключение бренда</li><li>история действий</li><li>персональные рекомендации</li></ul></article><article className="brand-card"><Coffee /><h3>Контекст бренда</h3><ul><li>своё меню</li><li>свои условия получения</li><li>отдельная корзина</li><li>свои правила лояльности</li></ul></article><article className="restore-card"><PackageCheck /><h3>Восстановление</h3><p>После демонстрационной ошибки сохраняются корзина, адрес и формат. Возврат к оплате открывается с этими параметрами.</p><a href={`${prototype}/payment-error`}>Открыть состояние <ArrowRight /></a></article></div>
       <FooterMark number="08" />
     </section>
 
@@ -105,7 +105,7 @@ export function CasePage() {
     </section>
 
     <section className="case-section contact" id="section-10" data-index="10">
-      <div className="contact-copy"><p className="case-eyebrow">Следующий шаг</p><h2>Покажем прототип<br />лично и выберем пилот</h2><p>Обсудим 2–3 приоритетных сценария, зафиксируем ограничения текущих систем и соберём план проверки на внутренних данных. Можем лично приехать и показать прототип команде.</p><div className="button-row"><a className="case-button lime" href="mailto:hello@eh.works"><Mail /> hello@eh.works</a><a className="case-button outline" href="https://eh.works" target="_blank" rel="noreferrer">eh.works <ExternalLink /></a></div></div>
+      <div className="contact-copy"><p className="case-eyebrow">Следующий шаг</p><h2>Покажем прототип<br />лично и выберем пилот</h2><p>Обсудим 2–3 приоритетных сценария, зафиксируем ограничения текущих систем и соберём план проверки на внутренних данных. Можем лично приехать и показать прототип команде.</p><div className="button-row"><a className="case-button lime" href="mailto:hello@eh.works"><Mail /> hello@eh.works</a><a className="case-button outline" href="https://eh.works" target="_blank" rel="noreferrer">eh.works <ExternalLink /></a><a className="case-button outline" href="https://t.me/andrey_ergohaven" target="_blank" rel="noreferrer">Telegram · @andrey_ergohaven <ExternalLink /></a><a className="case-button outline" href="https://max.ru/id5041212966_biz" target="_blank" rel="noreferrer">MAX · +7 988 154-04-00 <ExternalLink /></a></div></div>
       <div className="contact-card"><span>ООО «ЭРГОХАВЭН»</span><b>Краснодар<br />аккредитованная<br />ИТ-компания</b><small>Продуктовая аналитика · UX/UI · разработка · интеграции · публикация · обновления · техническая поддержка</small><i>EH</i></div>
       <p className="disclaimer">Инициативная концепция ООО «ЭРГОХАВЭН», созданная на основе открытых данных. Не является официальным продуктом УК «РестПрофи» или упомянутых брендов. Все действия в прототипе — безопасная симуляция.</p>
       <FooterMark number="11" />

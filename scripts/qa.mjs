@@ -97,6 +97,8 @@ for (const href of scenarioLinks) {
 await flow.goto(caseUrl)
 if (await flow.locator('a[href="mailto:hello@eh.works"]').count() !== 1) errors.push('case: mailto link is missing or duplicated')
 if (await flow.locator('a[href="https://eh.works"]').count() !== 1) errors.push('case: eh.works link is missing or duplicated')
+if (await flow.locator('a[href="https://t.me/andrey_ergohaven"]').count() !== 1) errors.push('case: Telegram link is missing or duplicated')
+if (await flow.locator('a[href="https://max.ru/id5041212966_biz"]').count() !== 1) errors.push('case: MAX link is missing or duplicated')
 const external = await flow.request.get('https://eh.works')
 if (!external.ok()) errors.push(`eh.works HTTP ${external.status()}`)
 

@@ -262,7 +262,7 @@ function MenuScreen({ go, session, update }: { go: Go; session: Session; update:
     <div className="dish-list">
       {items.map((item) => <article className="dish-card" key={item.id}><button className={`dish-art ${item.art}`} aria-label={`Открыть ${item.title}`} onClick={() => go(`/product/${item.id}`)}><span>{item.title.slice(0, 1)}</span></button><div><button className="dish-title" onClick={() => go(`/product/${item.id}`)}>{item.title}</button><small>{item.meta}</small><footer><b>{item.price ? `${item.price} ₽` : 'Уточнить'}</b>{item.price ? <button aria-label={`Добавить ${item.title}`} onClick={() => add(item.id)}><Plus /></button> : <button aria-label="Открыть" onClick={() => go(`/product/${item.id}`)}><ArrowRight /></button>}</footer></div></article>)}
     </div>
-    <p className="demo-caption">Ассортимент и цены показаны как демонстрационное содержимое по открытым меню на 10.08.2026.</p>
+    <p className="demo-caption">Ассортимент и цены показаны как демонстрационное содержимое по открытым меню на 11.08.2026.</p>
     {session.cart[session.brand] > 0 && <button className="floating-cart" onClick={() => go(`/cart/${session.brand}`)}><span><ShoppingBag /> {session.cart[session.brand]}</span><b>В корзину</b><span>{selectedItem.price ? `${selectedItem.price * session.cart[session.brand]} ₽` : 'Уточнить'}</span></button>}
   </div>
 }
