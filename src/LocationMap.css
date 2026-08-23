@@ -1,0 +1,194 @@
+.eh-location-picker {
+  display: grid;
+  gap: 12px;
+  margin: 18px 0;
+}
+.eh-location-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+}
+.eh-location-heading span {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.62;
+}
+.eh-location-heading h2 {
+  margin: 3px 0 0;
+  font-size: 21px;
+  line-height: 1.1;
+}
+.eh-locate {
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #141414;
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+}
+.eh-location-search {
+  height: 46px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid rgba(20, 20, 20, 0.12);
+  border-radius: 14px;
+  background: #fff;
+}
+.eh-location-search input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+}
+.eh-geo-status,
+.eh-location-note {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.35;
+  opacity: 0.65;
+}
+.eh-map-shell {
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid rgba(20, 20, 20, 0.09);
+  background: #e9eee8;
+}
+.eh-map {
+  height: 260px;
+  width: 100%;
+  font-family: inherit;
+}
+.leaflet-control-attribution {
+  font-size: 9px !important;
+}
+.eh-map-marker-wrap {
+  background: none;
+  border: 0;
+}
+.eh-map-marker {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 36px;
+  border-radius: 16px 16px 16px 4px;
+  transform: rotate(-45deg);
+  background: #262626;
+  color: #fff;
+  border: 3px solid #fff;
+  box-shadow: 0 5px 16px rgba(0, 0, 0, 0.25);
+  font-size: 10px;
+  font-weight: 800;
+}
+.eh-map-marker.active {
+  background: #e7522d;
+  transform: rotate(-45deg) scale(1.16);
+}
+.eh-map-marker i {
+  font-style: normal;
+  transform: rotate(45deg);
+}
+.eh-location-list {
+  display: grid;
+  gap: 8px;
+  max-height: 310px;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.eh-location-list > button {
+  width: 100%;
+  border: 1px solid rgba(20, 20, 20, 0.09);
+  border-radius: 15px;
+  padding: 12px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
+  text-align: left;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+}
+.eh-location-list > button.active {
+  border-color: #e7522d;
+  box-shadow: 0 0 0 2px rgba(231, 82, 45, 0.12);
+}
+.eh-location-list span {
+  min-width: 0;
+}
+.eh-location-list b,
+.eh-location-list small,
+.eh-location-list em {
+  display: block;
+}
+.eh-location-list b {
+  font-size: 13px;
+}
+.eh-location-list small {
+  margin-top: 3px;
+  font-size: 11px;
+  line-height: 1.35;
+  opacity: 0.72;
+}
+.eh-location-list em {
+  margin-top: 4px;
+  font-size: 10px;
+  font-style: normal;
+  opacity: 0.58;
+}
+.eh-location-list strong {
+  font-size: 11px;
+  white-space: nowrap;
+}
+.eh-location-index {
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  background: rgba(231, 82, 45, 0.1);
+  color: #cf4422;
+}
+.eh-location-empty {
+  min-height: 130px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 5px;
+  text-align: center;
+  border: 1px dashed rgba(20, 20, 20, 0.2);
+  border-radius: 16px;
+}
+.eh-location-empty span {
+  font-size: 12px;
+  opacity: 0.65;
+}
+@media (max-width: 390px) {
+  .eh-location-heading {
+    align-items: start;
+  }
+  .eh-location-heading h2 {
+    font-size: 19px;
+  }
+  .eh-locate {
+    padding: 9px;
+    font-size: 0;
+  }
+  .eh-locate svg {
+    width: 18px;
+  }
+  .eh-map {
+    height: 235px;
+  }
+}

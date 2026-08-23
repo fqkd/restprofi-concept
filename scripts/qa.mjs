@@ -1,6 +1,40 @@
 import { chromium } from '@playwright/test'
+import { spawn } from 'node:child_process'
 
 const base = process.env.QA_BASE_URL || 'http://127.0.0.1:4173/restprofi-concept/'
+const remoteBase = process.env.QA_BASE_URL
+let preview
+process.on('exit', () => {
+  if (preview && !preview.killed) preview.kill('SIGTERM')
+})
+
+async function waitForServer(url) {
+  for (let attempt = 0; attempt < 50; attempt += 1) {
+    try {
+      const response = await fetch(url)
+      if (response.ok) return
+    } catch {}
+    await new Promise((resolve) => setTimeout(resolve, 250))
+  }
+  throw new Error(`Сервер не ответил: ${url}`)
+}
+
+async function fetchExternal(url) {
+  let lastError
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      return await fetch(url, { redirect: 'follow', signal: AbortSignal.timeout(15_000) })
+    } catch (error) {
+      lastError = error
+    }
+  }
+  throw lastError
+}
+
+if (!remoteBase) {
+  preview = spawn(process.execPath, ['node_modules/vite/bin/vite.js', 'preview', '--host', '127.0.0.1', '--port', '4173', '--strictPort'], { stdio: ['ignore', 'pipe', 'pipe'] })
+  await waitForServer(base)
+}
 const prototypeRoutes = [
   '#/', '#/order', '#/brand/pitcofe/format', '#/brand/mamadonna/menu', '#/product/gnocchi',
   '#/cart/pitcofe', '#/checkout/pitcofe', '#/payment-error', '#/booking',
@@ -59,7 +93,14 @@ await flow.reload()
 await flow.getByRole('button', { name: /Заказать еду/ }).click()
 await flow.getByRole('button', { name: /Питькофе/ }).click()
 await flow.getByRole('button', { name: /Самовывоз/ }).click()
-await flow.getByRole('button', { name: /Другая кофейня/ }).click()
+await flow.getByLabel('Поиск точки').fill('несуществующий адрес')
+await flow.getByText('Ничего не найдено').waitFor()
+await flow.getByLabel('Поиск точки').fill('Библиотека')
+await flow.getByRole('button', { name: /Библиотека/ }).click()
+await flow.context().grantPermissions(['geolocation'], { origin: new URL(base).origin })
+await flow.context().setGeolocation({ latitude: 47.226, longitude: 39.721 })
+await flow.getByRole('button', { name: /Рядом со мной/ }).click()
+await flow.getByText('Расстояния рассчитаны от вашего положения').waitFor()
 await flow.getByRole('button', { name: /Смотреть доступное меню/ }).click()
 await flow.getByRole('button', { name: /Открыть Ньокки/ }).click()
 await flow.getByRole('button', { name: /Добавить ·/ }).click()
@@ -99,11 +140,12 @@ if (await flow.locator('a[href="mailto:hello@eh.works"]').count() !== 1) errors.
 if (await flow.locator('a[href="https://eh.works"]').count() !== 1) errors.push('case: eh.works link is missing or duplicated')
 if (await flow.locator('a[href="https://t.me/andrey_ergohaven"]').count() !== 1) errors.push('case: Telegram link is missing or duplicated')
 if (await flow.locator('a[href="https://max.ru/id5041212966_biz"]').count() !== 1) errors.push('case: MAX link is missing or duplicated')
-const external = await flow.request.get('https://eh.works')
-if (!external.ok()) errors.push(`eh.works HTTP ${external.status()}`)
+const external = await fetchExternal('https://eh.works')
+if (!external.ok) errors.push(`eh.works HTTP ${external.status}`)
 
 await flow.close()
 await browser.close()
+if (preview) preview.kill('SIGTERM')
 
 if (errors.length) {
   console.error(errors.join('\n'))

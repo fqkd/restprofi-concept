@@ -5,6 +5,8 @@ import {
   Home, MapPin, Minus, PackageCheck, Plus, Search, ShoppingBag,
   Sparkles, Star, Store, TicketCheck, Truck, UserRound, UsersRound,
 } from 'lucide-react'
+import { LocationMap } from './LocationMap'
+import { locationsByBrand } from './locations'
 
 type BrandId = 'pitcofe' | 'mamadonna' | 'esttort' | 'cream'
 type Service = 'delivery' | 'pickup'
@@ -59,12 +61,9 @@ const dishes: Record<BrandId, Array<{ id: string; title: string; meta: string; p
 }
 
 const demoDeliveryAddresses = ['ул. Пушкинская, 120 · демо', 'просп. Соколова, 45 · демо']
-const pickupLocations: Record<BrandId, string[]> = {
-  pitcofe: ['«Библиотека», ул. Пушкинская, 120А', 'Другая кофейня · выбор в пилоте'],
-  mamadonna: ['MamaDonna, ул. Красноармейская, 64', 'MamaDonna, ул. Волкова, 5'],
-  esttort: ['Точку получения уточнит кондитер'],
-  cream: ['Кондитерская Cream · точка уточняется'],
-}
+const pickupLocations: Record<BrandId, string[]> = Object.fromEntries(
+  Object.entries(locationsByBrand).map(([brand, locations]) => [brand, locations.map((location) => location.address)]),
+) as Record<BrandId, string[]>
 
 const initialSession: Session = {
   brand: 'pitcofe',
@@ -229,9 +228,11 @@ function BrandScreen({ go, session }: { go: Go; session: Session }) {
 
 function FormatScreen({ go, session, update }: { go: Go; session: Session; update: (p: Partial<Session>) => void }) {
   const locations = session.service === 'delivery' ? demoDeliveryAddresses : pickupLocations[session.brand]
+  const mapLocations = locationsByBrand[session.brand]
+  const selectedLocation = mapLocations.find((location) => location.address === session.address) ?? mapLocations[0]
   const selectService = (service: Service) => update({
     service,
-    address: service === 'delivery' ? demoDeliveryAddresses[0] : pickupLocations[session.brand][0],
+    address: service === 'delivery' ? demoDeliveryAddresses[0] : (pickupLocations[session.brand][0] ?? ''),
   })
   return <div className="screen format-screen">
     <ScreenHeader title={brands[session.brand].name} go={go} back={`/brand/${session.brand}`} />
@@ -241,7 +242,13 @@ function FormatScreen({ go, session, update }: { go: Go; session: Session; updat
       <button className={session.service === 'pickup' ? 'active' : ''} onClick={() => selectService('pickup')}><Store /><b>Самовывоз</b><small>из выбранной точки</small></button>
     </div>
     <h2>{session.service === 'delivery' ? 'Куда доставить' : 'Где забрать'}</h2>
-    <div className="location-list">{locations.map((location) => <button className={`location-choice ${session.address === location ? 'active' : ''}`} key={location} onClick={() => update({ address: location })}><MapPin /><span><b>{location}</b><small>{session.service === 'delivery' ? 'Демонстрационный адрес · зона и срок уточняются' : 'Условия и доступность проверяются до меню'}</small></span>{session.address === location ? <Check /> : <ChevronRight />}</button>)}</div>
+    {session.service === 'pickup' && mapLocations.length ? <LocationMap
+      points={mapLocations}
+      selectedId={selectedLocation.id}
+      onSelect={(location) => update({ address: location.address })}
+      title={`Точки ${brands[session.brand].name}`}
+    /> : <div className="location-list">{locations.map((location) => <button className={`location-choice ${session.address === location ? 'active' : ''}`} key={location} onClick={() => update({ address: location })}><MapPin /><span><b>{location}</b><small>{session.service === 'delivery' ? 'Демонстрационный адрес · зона и срок уточняются' : 'Условия и доступность проверяются до меню'}</small></span>{session.address === location ? <Check /> : <ChevronRight />}</button>)}</div>}
+    {session.service === 'pickup' && !mapLocations.length && <div className="empty"><MapPin /><h2>Адрес требует подтверждения</h2><p>В официальных источниках не найден актуальный публичный адрес точки Cream. Мы не показываем вымышленный маркер.</p></div>}
     <div className="info-note"><Clock3 /><span><b>Условия показаны заранее</b><small>Фактическое время и минимальная сумма зависят от адреса и загрузки точки.</small></span></div>
     <button className="cta" onClick={() => go(`/brand/${session.brand}/menu`)}>Смотреть доступное меню <ArrowRight /></button>
   </div>

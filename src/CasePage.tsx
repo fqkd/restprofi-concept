@@ -64,8 +64,8 @@ export function CasePage() {
     </section>
 
     <section className="case-section scenario order" id="section-4" data-index="4">
-      <div className="section-heading"><p className="case-eyebrow">Ключевой сценарий № 1</p><h2>Заказ начинается<br />с условий получения</h2><p>Формат и адрес определяют доступное меню до того, как пользователь наполнит корзину.</p><a className="case-button dark" href={`${prototype}/brand/pitcofe/format`}><Play /> Посмотреть сценарий</a></div>
-      <div className="scenario-steps"><Step icon={<Truck />} n="01" title="Формат" text="Доставка или самовывоз" /><Step icon={<MapPin />} n="02" title="Контекст" text="Адрес или конкретная точка" /><Step icon={<Coffee />} n="03" title="Меню" text="Доступное для выбранного контекста" /><Step icon={<ShoppingBag />} n="04" title="Корзина" text="Только позиции одного бренда" /></div>
+      <div className="section-heading"><p className="case-eyebrow">Ключевой сценарий № 1</p><h2>Заказ начинается<br />с условий получения</h2><p>Формат и адрес определяют доступное меню до того, как пользователь наполнит корзину. Для самовывоза работает интерактивная карта подтверждённых точек с поиском и синхронным списком.</p><a className="case-button dark" href={`${prototype}/brand/pitcofe/format`}><Play /> Посмотреть сценарий</a></div>
+      <div className="scenario-steps"><Step icon={<Truck />} n="01" title="Формат" text="Доставка или самовывоз" /><Step icon={<MapPin />} n="02" title="Карта" text="Поиск и выбор реальной точки" /><Step icon={<Coffee />} n="03" title="Меню" text="Доступное для выбранного контекста" /><Step icon={<ShoppingBag />} n="04" title="Корзина" text="Только позиции одного бренда" /></div>
       <PhoneMock kind="order" />
       <FooterMark number="05" />
     </section>
