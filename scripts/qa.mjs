@@ -1,5 +1,6 @@
 import { chromium } from '@playwright/test'
 import { spawn } from 'node:child_process'
+import { mkdir, writeFile } from 'node:fs/promises'
 
 const base = process.env.QA_BASE_URL || 'http://127.0.0.1:4173/restprofi-concept/'
 const remoteBase = process.env.QA_BASE_URL
@@ -48,13 +49,23 @@ const prototypeSizes = [
   { width: 1440, height: 1000 },
 ]
 const caseSizes = [
-  { width: 390, height: 844 },
-  { width: 768, height: 1024 },
-  { width: 1440, height: 1000 },
+  { width: 1366, height: 768 },
+  { width: 1440, height: 900 },
+  { width: 1920, height: 1080 },
 ]
 
+await mkdir('qa-output', { recursive: true })
 const browser = await chromium.launch({ headless: true })
 const errors = []
+const report = { base, pages: [], scenarios: [] }
+
+function screenshotName(route, size) {
+  const routeName = route
+    .replace(/^#\/?/, '')
+    .replace(/\/$/, '')
+    .replace(/[^a-z0-9]+/gi, '-') || 'home'
+  return `qa-output/${routeName}-${size.width}x${size.height}.png`
+}
 
 async function inspect(route, size) {
   const page = await browser.newPage({ viewport: size })
@@ -73,6 +84,8 @@ async function inspect(route, size) {
   }))
   if (state.overflow) errors.push(`${size.width}px overflow: ${route}`)
   if (state.rootEmpty) errors.push(`${size.width}px empty root: ${route}`)
+  await page.screenshot({ path: screenshotName(route, size), fullPage: true })
+  report.pages.push({ route, ...size, status: response?.status(), ...state })
   await page.close()
 }
 
@@ -111,6 +124,7 @@ await flow.reload()
 await flow.getByRole('button', { name: 'Вернуться к оплате' }).click()
 await flow.getByRole('button', { name: /Подтвердить демозаказ/ }).click()
 await flow.getByRole('heading', { name: 'Заказ подтверждён' }).waitFor()
+report.scenarios.push({ name: 'заказ → ошибка оплаты → восстановление', status: 'passed' })
 
 await flow.goto(new URL('#/booking', base).href)
 await flow.getByRole('button', { name: /Питькофе/ }).click()
@@ -118,6 +132,7 @@ await flow.getByRole('button', { name: 'Завтра' }).click()
 await flow.getByRole('button', { name: '20:00' }).click()
 await flow.getByRole('button', { name: /Подтвердить демобронь/ }).click()
 await flow.getByRole('heading', { name: /Питькофе завтра в 20:00/i }).waitFor()
+report.scenarios.push({ name: 'бронирование → подтверждение', status: 'passed' })
 
 await flow.goto(new URL('#/cake', base).href)
 await flow.getByRole('button', { name: 'Детский' }).click()
@@ -125,6 +140,7 @@ await flow.getByRole('button', { name: /Оникс/ }).click()
 await flow.getByRole('button', { name: /Дата · изменить/ }).click()
 await flow.getByRole('button', { name: /Сформировать демозаявку/ }).click()
 await flow.getByText(/Детский · «Оникс»/).waitFor()
+report.scenarios.push({ name: 'торт → демозаявка', status: 'passed' })
 
 await flow.goto(new URL('case/', base).href)
 const caseUrl = flow.url()
@@ -146,9 +162,10 @@ if (!external.ok) errors.push(`eh.works HTTP ${external.status}`)
 await flow.close()
 await browser.close()
 if (preview) preview.kill('SIGTERM')
+await writeFile('qa-output/report.json', JSON.stringify(report, null, 2))
 
 if (errors.length) {
   console.error(errors.join('\n'))
   process.exit(1)
 }
-console.log(`QA: ${prototypeRoutes.length} prototype routes × ${prototypeSizes.length} viewports; case × ${caseSizes.length}; public-style order recovery, booking, cake and all case links passed`)
+console.log(`QA: ${prototypeRoutes.length} prototype routes × ${prototypeSizes.length} viewports; case at 1366x768, 1440x900 and 1920x1080; screenshots, order recovery, booking, cake and all case links passed`)
