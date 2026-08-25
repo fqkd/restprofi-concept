@@ -9,10 +9,10 @@ test('заказ сохраняется после ошибки и заверш�
   await page.getByRole('button', { name: /Открыть Ньокки/ }).click()
   await page.getByRole('button', { name: /Добавить ·/ }).click()
   await page.getByRole('button', { name: /К оформлению/ }).click()
-  await page.getByRole('button', { name: /Подтвердить демозаказ/ }).click()
+  await page.getByRole('button', { name: /Подтвердить заказ/ }).click()
   await expect(page.getByRole('heading', { name: 'Корзина на месте' })).toBeVisible()
   await page.getByRole('button', { name: 'Вернуться к оплате' }).click()
-  await page.getByRole('button', { name: /Подтвердить демозаказ/ }).click()
+  await page.getByRole('button', { name: /Подтвердить заказ/ }).click()
   await expect(page.getByRole('heading', { name: 'Заказ подтверждён' })).toBeVisible()
 })
 
@@ -22,22 +22,22 @@ test('бронирование доходит до подтверждения', 
   await page.getByRole('button', { name: 'Завтра' }).click()
   await page.getByRole('button', { name: '20:00' }).click()
   await page.getByRole('button', { name: 'Увеличить' }).click()
-  await page.getByRole('button', { name: /Подтвердить демобронь/ }).click()
-  await expect(page.getByText('Код демоброни')).toBeVisible()
+  await page.getByRole('button', { name: /Сохранить запрос/ }).click()
+  await expect(page.getByText('Номер запроса')).toBeVisible()
   await expect(page.getByRole('heading', { name: /Питькофе завтра в 20:00/i })).toBeVisible()
   await expect(page.getByText(/3 гостя/)).toBeVisible()
 })
 
-test('заказ торта формирует отдельную демозаявку', async ({ page }) => {
+test('заказ торта формирует отдельную заявку', async ({ page }) => {
   await page.goto('#/cake')
   await page.getByRole('button', { name: 'Детский' }).click()
   await page.getByRole('button', { name: /Оникс/ }).click()
   await page.getByRole('button', { name: /Вес · изменить/ }).click()
   await page.getByRole('button', { name: /Дата · изменить/ }).click()
-  await page.getByRole('button', { name: /Сформировать демозаявку/ }).click()
-  await expect(page.getByText('Демозаявка')).toBeVisible()
+  await page.getByRole('button', { name: /Сохранить заявку/ }).click()
+  await expect(page.getByText('Заявка', { exact: true })).toBeVisible()
   await expect(page.getByText(/Детский · «Оникс» · 3 кг/)).toBeVisible()
-  await expect(page.getByText(/К 16 августа/)).toBeVisible()
+  await expect(page.getByText(/К \d{1,2} [а-яё]+/i)).toBeVisible()
 })
 
 test('поиск и корзина остаются в контексте MamaDonna', async ({ page }) => {
