@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AttributionControl,
   CircleMarker,
@@ -9,7 +9,7 @@ import {
   useMap,
 } from "react-leaflet";
 import { divIcon } from "leaflet";
-import { LocateFixed, MapPin, Search } from "lucide-react";
+import { LocateFixed, MapPin, Search, X } from "lucide-react";
 import "leaflet/dist/leaflet.css";
 import "./LocationMap.css";
 
@@ -29,6 +29,7 @@ type Props = {
   selectedId: string;
   onSelect: (point: MapPoint) => void;
   title?: string;
+  onValidityChange?: (valid: boolean) => void;
 };
 
 const radians = (value: number) => (value * Math.PI) / 180;
@@ -46,7 +47,12 @@ const distanceKm = (from: [number, number], point: MapPoint) => {
 
 function FocusPoint({ point }: { point?: MapPoint }) {
   const map = useMap();
+  const mounted = useRef(false);
   useEffect(() => {
+    if (!mounted.current) {
+      mounted.current = true;
+      return;
+    }
     if (point)
       map.flyTo([point.lat, point.lng], Math.max(map.getZoom(), 14), {
         duration: 0.45,
@@ -68,10 +74,12 @@ export function LocationMap({
   selectedId,
   onSelect,
   title = "Выберите точку",
+  onValidityChange,
 }: Props) {
   const [query, setQuery] = useState("");
   const [position, setPosition] = useState<[number, number] | null>(null);
   const [geoStatus, setGeoStatus] = useState("");
+  const itemRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const normalized = query.trim().toLocaleLowerCase("ru");
 
   const visible = useMemo(() => {
@@ -92,6 +100,12 @@ export function LocationMap({
   }, [normalized, points, position]);
 
   const selected = points.find((point) => point.id === selectedId) ?? points[0];
+  useEffect(() => {
+    onValidityChange?.(visible.some((point) => point.id === selectedId));
+  }, [onValidityChange, selectedId, visible]);
+  useEffect(() => {
+    itemRefs.current[selectedId]?.scrollIntoView({ block: "nearest" });
+  }, [selectedId]);
   const locate = () => {
     if (!navigator.geolocation) {
       setGeoStatus("Геолокация недоступна в этом браузере");
@@ -129,16 +143,20 @@ export function LocationMap({
           placeholder="Адрес, район или название"
           aria-label="Поиск точки"
         />
+        {query && <button type="button" aria-label="Очистить поиск" onClick={() => setQuery("")}><X size={17} /></button>}
       </label>
       {geoStatus && (
         <p className="eh-geo-status" role="status">
           {geoStatus}
         </p>
       )}
+      <p className="eh-location-count">Найдено точек: {visible.length}</p>
       <div className="eh-map-shell">
         <MapContainer
           center={[selected.lat, selected.lng]}
           zoom={13}
+          bounds={points.map((point) => [point.lat, point.lng])}
+          boundsOptions={{ padding: [22, 22] }}
           scrollWheelZoom={false}
           attributionControl={false}
           className="eh-map"
@@ -187,6 +205,7 @@ export function LocationMap({
               <button
                 type="button"
                 key={point.id}
+                ref={(node) => { itemRefs.current[point.id] = node; }}
                 className={point.id === selected.id ? "active" : ""}
                 onClick={() => onSelect(point)}
               >

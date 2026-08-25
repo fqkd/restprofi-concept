@@ -53,12 +53,28 @@
   font: inherit;
   color: inherit;
 }
+.eh-location-search button {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #eee9e1;
+  color: inherit;
+}
 .eh-geo-status,
 .eh-location-note {
   margin: 0;
   font-size: 11px;
   line-height: 1.35;
   opacity: 0.65;
+}
+.eh-location-count {
+  margin: -3px 2px 0;
+  color: #746f67;
+  font-size: 11px;
+  font-weight: 700;
 }
 .eh-map-shell {
   overflow: hidden;
