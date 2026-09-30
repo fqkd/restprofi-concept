@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { LocationMap } from './LocationMap'
 import { locationsByBrand } from './locations'
+import { bookingDateOptions, cakeDateOptions, formatKrasnodarDate, isFutureBookingTime, upcomingOrderIntervals } from './lib/schedule'
 
 type BrandId = 'pitcofe' | 'mamadonna' | 'esttort' | 'cream'
 type Service = 'delivery' | 'pickup'
@@ -67,14 +68,6 @@ const dishes: Record<BrandId, Array<{ id: string; title: string; meta: string; p
   ],
 }
 
-const formatKrasnodarDate = (offsetDays: number) => {
-  const value = new Date()
-  value.setUTCDate(value.getUTCDate() + offsetDays)
-  return new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', timeZone: 'Europe/Moscow' }).format(value)
-}
-const bookingDates = ['Сегодня', 'Завтра', formatKrasnodarDate(2)]
-const cakeDates = [formatKrasnodarDate(3), formatKrasnodarDate(4)]
-
 const demoDeliveryAddresses = ['ул. Пушкинская, 120А', 'просп. Соколова, 45']
 const pickupLocations: Record<BrandId, string[]> = Object.fromEntries(
   Object.entries(locationsByBrand).map(([brand, locations]) => [brand, locations.map((location) => location.address)]),
@@ -88,14 +81,14 @@ const initialSession: Session = {
   paymentFailed: false,
   address: 'ул. Пушкинская, 120А',
   booking: { brand: 'mamadonna', date: 'Сегодня', time: '19:30', guests: 2 },
-  cake: { kind: 'Праздничный', filling: 'Чёрный лес', weight: '2 кг', date: cakeDates[0] },
+  cake: { kind: 'Праздничный', filling: 'Чёрный лес', weight: '2 кг', date: cakeDateOptions()[0] },
 }
 
 function readSession(): Session {
   try {
     const stored = { ...initialSession, ...JSON.parse(sessionStorage.getItem('restprofi-demo-v2') || '{}') }
-    if (/^(12|15|16) августа$/i.test(stored.booking?.date)) stored.booking.date = 'Сегодня'
-    if (/^(12|15|16) августа$/i.test(stored.cake?.date)) stored.cake.date = cakeDates[0]
+    if (!bookingDateOptions().includes(stored.booking?.date)) stored.booking.date = 'Сегодня'
+    if (!cakeDateOptions().includes(stored.cake?.date)) stored.cake.date = cakeDateOptions()[0]
     if (stored.address?.includes('· демо')) stored.address = stored.address.replace(' · демо', '').replace('Пушкинская, 120', 'Пушкинская, 120А')
     return stored
   } catch {
@@ -346,6 +339,10 @@ function CartScreen({ go, session, update }: { go: Go; session: Session; update:
 
 function CheckoutScreen({ go, session, update, loading, setLoading }: { go: Go; session: Session; update: (p: Partial<Session>) => void; loading: boolean; setLoading: (v: boolean) => void }) {
   const [time, setTime] = useState('Ближайшее время')
+  const [now, setNow] = useState(() => new Date())
+  useEffect(() => { const timer = window.setInterval(() => setNow(new Date()), 60_000); return () => window.clearInterval(timer) }, [])
+  const intervalOptions = upcomingOrderIntervals(now)
+  const validTime = time === 'Ближайшее время' || intervalOptions.includes(time)
   const [card, setCard] = useState('Карта •• 2481')
   const [editing, setEditing] = useState<'time' | 'payment' | null>(null)
   const [name, setName] = useState('Гость')
@@ -367,12 +364,13 @@ function CheckoutScreen({ go, session, update, loading, setLoading }: { go: Go; 
     <div className="checkout-block"><span>{session.service === 'delivery' ? <Truck /> : <Store />}<b>{session.service === 'delivery' ? 'Доставка' : 'Самовывоз'}</b></span><small>{session.address}</small><button onClick={() => go(`/brand/${session.brand}/format`)}>Изменить</button></div>
     <div className="checkout-block"><span><Clock3 /><b>{time}</b></span><small>Интервал подтвердит оператор</small><button onClick={() => setEditing('time')}>Выбрать</button></div>
     <div className="checkout-block"><span><CreditCard /><b>{card}</b></span><small>Без реального списания</small><button onClick={() => setEditing('payment')}>Выбрать</button></div>
-    {editing && <div className="choice-sheet" role="dialog" aria-label={editing === 'time' ? 'Выбор времени' : 'Выбор оплаты'}><div><b>{editing === 'time' ? 'Когда получить заказ' : 'Способ оплаты'}</b><button aria-label="Закрыть" onClick={() => setEditing(null)}>×</button></div>{(editing === 'time' ? ['Ближайшее время', 'Сегодня, 14:30–15:00', 'Сегодня, 16:00–16:30'] : ['Карта •• 2481', 'При получении']).map((value) => <button className={(editing === 'time' ? time : card) === value ? 'active' : ''} key={value} onClick={() => { if (editing === 'time') setTime(value); else setCard(value); setEditing(null) }}>{value}<Check /></button>)}</div>}
+    {editing && <div className="choice-sheet" role="dialog" aria-label={editing === 'time' ? 'Выбор времени' : 'Выбор оплаты'}><div><b>{editing === 'time' ? 'Когда получить заказ' : 'Способ оплаты'}</b><button aria-label="Закрыть" onClick={() => setEditing(null)}>×</button></div>{(editing === 'time' ? ['Ближайшее время', ...intervalOptions] : ['Карта •• 2481', 'При получении']).map((value) => <button className={(editing === 'time' ? time : card) === value ? 'active' : ''} key={value} onClick={() => { if (editing === 'time') setTime(value); else setCard(value); setEditing(null) }}>{value}<Check /></button>)}</div>}
     <h2>Состав заказа</h2><div className="checkout-order"><div className={`mini-art ${item.art}`} /><span><b>{item.title}</b><small>{session.cart[session.brand]} × {item.price ? `${item.price} ₽` : 'цена уточняется'}</small></span><strong>{total ? `${total} ₽` : 'уточняется'}</strong></div>
     <h2>Контакты</h2><div className="contact-fields"><label><span>Имя</span><input value={name} onChange={(event) => setName(event.target.value)} /></label><label><span>Телефон</span><input inputMode="tel" value={phone} onChange={(event) => setPhone(event.target.value)} /></label></div>
     <div className="total"><span>К оплате</span><b>{total ? `${total} ₽` : 'уточняется'}</b></div>
-    <button className="cta" disabled={loading || !validContacts} onClick={pay}>{loading ? <><span className="spinner" /> Проверяем…</> : <>Подтвердить заказ <ArrowRight /></>}</button>
+    <button className="cta" disabled={loading || !validContacts || !validTime} onClick={pay}>{loading ? <><span className="spinner" /> Проверяем…</> : <>Подтвердить заказ <ArrowRight /></>}</button>
     {!validContacts && <p className="field-error">Укажите имя и телефон, чтобы продолжить.</p>}
+    {!validTime && <p className="field-error">Выбранный интервал уже прошёл. Укажите другое время.</p>}
   </div>
 }
 
@@ -385,9 +383,14 @@ function OrderSuccess({ go, session, update }: { go: Go; session: Session; updat
 }
 
 function BookingScreen({ go, session, update }: { go: Go; session: Session; update: (p: Partial<Session>) => void }) {
+  const [now, setNow] = useState(() => new Date())
+  useEffect(() => { const timer = window.setInterval(() => setNow(new Date()), 60_000); return () => window.clearInterval(timer) }, [])
+  const bookingDates = bookingDateOptions(now)
+  const bookingTimes = ['18:30', '19:00', '19:30', '20:00']
+  const validBooking = isFutureBookingTime(session.booking.date, session.booking.time, now)
   const booking = session.booking
   const change = (patch: Partial<Session['booking']>) => update({ booking: { ...booking, ...patch } })
-  return <div className="screen booking-screen"><ScreenHeader title="Запрос столика" go={go} /><p className="step">Запрос</p><h1>Выберите удобные<br />параметры визита</h1><p className="lead">Дата и время рассчитываются от текущего дня. Финальную доступность подтвердит ресторан.</p><h2>Ресторан</h2><div className="brand-pills">{(['mamadonna', 'pitcofe'] as const).map((id) => <button className={booking.brand === id ? 'active' : ''} key={id} onClick={() => change({ brand: id })}><BrandMark id={id} small /><span><b>{brands[id].name}</b><small>{id === 'mamadonna' ? 'Красноармейская, 64' : '«Библиотека»'}</small></span></button>)}</div><h2>Дата</h2><div className="chips booking-chips">{bookingDates.map((value) => <button className={booking.date === value ? 'active' : ''} key={value} onClick={() => change({ date: value })}>{value}</button>)}</div><h2>Время</h2><div className="time-grid">{['18:30', '19:00', '19:30', '20:00'].map((value) => <button className={booking.time === value ? 'active' : ''} key={value} onClick={() => change({ time: value })}>{value}</button>)}</div><div className="guest-row"><span><UsersRound /><b>Количество гостей</b></span><div className="counter"><button aria-label="Уменьшить" onClick={() => change({ guests: Math.max(1, booking.guests - 1) })}><Minus /></button><b>{booking.guests}</b><button aria-label="Увеличить" onClick={() => change({ guests: booking.guests + 1 })}><Plus /></button></div></div><button className="cta" onClick={() => go('/booking/success')}>Сохранить запрос <ArrowRight /></button></div>
+  return <div className="screen booking-screen"><ScreenHeader title="Запрос столика" go={go} /><p className="step">Запрос</p><h1>Выберите удобные<br />параметры визита</h1><p className="lead">Дата и время рассчитываются от текущего дня. Финальную доступность подтвердит ресторан.</p><h2>Ресторан</h2><div className="brand-pills">{(['mamadonna', 'pitcofe'] as const).map((id) => <button className={booking.brand === id ? 'active' : ''} key={id} onClick={() => change({ brand: id })}><BrandMark id={id} small /><span><b>{brands[id].name}</b><small>{id === 'mamadonna' ? 'Красноармейская, 64' : '«Библиотека»'}</small></span></button>)}</div><h2>Дата</h2><div className="chips booking-chips">{bookingDates.map((value) => <button className={booking.date === value ? 'active' : ''} key={value} onClick={() => change({ date: value })}>{value}</button>)}</div><h2>Время</h2><div className="time-grid">{bookingTimes.map((value) => <button className={booking.time === value ? 'active' : ''} disabled={!isFutureBookingTime(booking.date, value, now)} key={value} onClick={() => change({ time: value })}>{value}</button>)}</div><div className="guest-row"><span><UsersRound /><b>Количество гостей</b></span><div className="counter"><button aria-label="Уменьшить" onClick={() => change({ guests: Math.max(1, booking.guests - 1) })}><Minus /></button><b>{booking.guests}</b><button aria-label="Увеличить" onClick={() => change({ guests: booking.guests + 1 })}><Plus /></button></div></div><button className="cta" disabled={!validBooking} onClick={() => go('/booking/success')}>Сохранить запрос <ArrowRight /></button>{!validBooking && <p className="field-error">Выберите будущие дату и время.</p>}</div>
 }
 
 function BookingSuccess({ go, session }: { go: Go; session: Session }) {
@@ -403,12 +406,14 @@ function guestWord(guests: number) {
 }
 
 function CakeScreen({ go, session, update }: { go: Go; session: Session; update: (p: Partial<Session>) => void }) {
+  const cakeDates = cakeDateOptions()
   const cake = session.cake
   const change = (patch: Partial<Session['cake']>) => update({ cake: { ...cake, ...patch } })
   return <div className="screen cake-screen"><ScreenHeader title="Заказ торта" go={go} /><div className="cake-hero"><CakeSlice /><p>ЕстьТорт</p><h1>Торт для вашего<br />повода</h1></div><p className="step">Минимум за 3 дня</p><h2>Категория</h2><div className="chips">{['Праздничный', 'Детский', 'Свадебный'].map((value) => <button className={cake.kind === value ? 'active' : ''} onClick={() => change({ kind: value })} key={value}>{value}</button>)}</div><h2>Начинка</h2><div className="choice-list">{['Чёрный лес', 'Сан-Себастьян', 'Оникс'].map((value) => <button className={cake.filling === value ? 'active' : ''} onClick={() => change({ filling: value })} key={value}><span><b>{value}</b><small>состав уточняется с кондитером</small></span>{cake.filling === value && <Check />}</button>)}</div><h2>Вес и дата</h2><div className="two-fields"><button onClick={() => change({ weight: cake.weight === '2 кг' ? '3 кг' : '2 кг' })}><small>Вес · изменить</small><b>{cake.weight}</b></button><button onClick={() => change({ date: cake.date === cakeDates[0] ? cakeDates[1] : cakeDates[0] })}><small>Дата · изменить</small><b>{cake.date}</b></button></div><div className="info-note"><CircleAlert /><span><b>Итог требует подтверждения</b><small>Декор, стоимость и доступность согласует кондитер.</small></span></div><button className="cta" onClick={() => go('/cake/success')}>Сохранить заявку <ArrowRight /></button></div>
 }
 
 function CakeSuccess({ go, session }: { go: Go; session: Session }) {
+  const cakeDates = cakeDateOptions()
   const { kind, filling, weight, date } = session.cake
   return <div className="screen status-screen cake-success"><div className="status-icon"><CakeSlice /></div><p className="eyebrow">Параметры сохранены</p><h1>Осталось<br />согласовать детали</h1><p>{kind} · «{filling}» · {weight}<br />К {date}</p><div className="ticket"><span>Заявка</span><b>ET–{String(cakeDates.indexOf(date) + 1).padStart(2, '0')}</b></div><button className="cta" onClick={() => go('/')}>На главный экран</button><button className="text-button" onClick={() => go('/cake')}>Изменить параметры</button></div>
 }
