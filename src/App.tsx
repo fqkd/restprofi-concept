@@ -8,15 +8,14 @@ import {
 import { LocationMap } from './LocationMap'
 import { locationsByBrand } from './locations'
 import { bookingDateOptions, cakeDateOptions, formatKrasnodarDate, isFutureBookingTime, upcomingOrderIntervals } from './lib/schedule'
+import { addItem, cartTotal, itemCount, setItemCount, type CartLines } from './lib/cart'
 
 type BrandId = 'pitcofe' | 'mamadonna' | 'esttort' | 'cream'
 type Service = 'delivery' | 'pickup'
-
 type Session = {
   brand: BrandId
   service: Service
-  cart: Record<BrandId, number>
-  cartItem: Record<BrandId, string>
+  cart: Record<BrandId, CartLines>
   paymentFailed: boolean
   address: string
   booking: {
@@ -68,6 +67,12 @@ const dishes: Record<BrandId, Array<{ id: string; title: string; meta: string; p
   ],
 }
 
+const emptyCart = (): Record<BrandId, CartLines> => ({ pitcofe: {}, mamadonna: {}, esttort: {}, cream: {} })
+const prices = (brand: BrandId) => Object.fromEntries(dishes[brand].map((item) => [item.id, item.price]))
+const cartEntries = (session: Session, brand: BrandId) => dishes[brand]
+  .map((item) => ({ item, count: session.cart[brand][item.id] || 0 }))
+  .filter(({ count }) => count > 0)
+
 const demoDeliveryAddresses = ['ул. Пушкинская, 120А', 'просп. Соколова, 45']
 const pickupLocations: Record<BrandId, string[]> = Object.fromEntries(
   Object.entries(locationsByBrand).map(([brand, locations]) => [brand, locations.map((location) => location.address)]),
@@ -76,8 +81,7 @@ const pickupLocations: Record<BrandId, string[]> = Object.fromEntries(
 const initialSession: Session = {
   brand: 'pitcofe',
   service: 'delivery',
-  cart: { pitcofe: 0, mamadonna: 0, esttort: 0, cream: 0 },
-  cartItem: { pitcofe: 'gnocchi', mamadonna: 'burrata', esttort: 'sebastian', cream: 'showcase' },
+  cart: emptyCart(),
   paymentFailed: false,
   address: 'ул. Пушкинская, 120А',
   booking: { brand: 'mamadonna', date: 'Сегодня', time: '19:30', guests: 2 },
@@ -87,6 +91,13 @@ const initialSession: Session = {
 function readSession(): Session {
   try {
     const stored = { ...initialSession, ...JSON.parse(sessionStorage.getItem('restprofi-demo-v2') || '{}') }
+    const oldCart = stored.cart as Record<BrandId, number | CartLines>
+    stored.cart = Object.fromEntries((Object.keys(brands) as BrandId[]).map((brand) => {
+      const value = oldCart?.[brand]
+      const item = stored.cartItem?.[brand] || dishes[brand][0].id
+      return [brand, typeof value === 'number' ? (value > 0 ? { [item]: value } : {}) : (value || {})]
+    })) as Record<BrandId, CartLines>
+    delete stored.cartItem
     if (!bookingDateOptions().includes(stored.booking?.date)) stored.booking.date = 'Сегодня'
     if (!cakeDateOptions().includes(stored.cake?.date)) stored.cake.date = cakeDateOptions()[0]
     if (stored.address?.includes('· демо')) stored.address = stored.address.replace(' · демо', '').replace('Пушкинская, 120', 'Пушкинская, 120А')
@@ -123,11 +134,11 @@ export function App() {
   }, [route, session.brand])
 
   useEffect(() => {
-    if (route === '/payment-error' && session.cart[session.brand] === 0) {
+    if (route === '/payment-error' && itemCount(session.cart[session.brand]) === 0) {
       setSession((value) => ({
         ...value,
         paymentFailed: true,
-        cart: { ...value.cart, [value.brand]: 1 },
+        cart: { ...value.cart, [value.brand]: addItem(value.cart[value.brand], dishes[value.brand][0].id) },
       }))
     }
   }, [route, session.brand, session.cart])
@@ -144,7 +155,7 @@ export function App() {
     window.scrollTo({ top: 0, behavior: 'instant' })
   }
   const update = (patch: Partial<Session>) => setSession((value) => ({ ...value, ...patch }))
-  const cartCount = session.cart[session.brand]
+  const cartCount = itemCount(session.cart[session.brand])
 
   const page = useMemo(() => {
     if (route === '/') return <HomeScreen go={go} session={session} update={update} />
@@ -283,10 +294,10 @@ function FormatScreen({ go, session, update }: { go: Go; session: Session; updat
 
 function MenuScreen({ go, session, update }: { go: Go; session: Session; update: (p: Partial<Session>) => void }) {
   const items = dishes[session.brand]
-  const selectedItem = items.find((item) => item.id === session.cartItem[session.brand]) || items[0]
+  const count = itemCount(session.cart[session.brand])
+  const total = cartTotal(session.cart[session.brand], prices(session.brand))
   const add = (itemId: string) => update({
-    cart: { ...session.cart, [session.brand]: session.cart[session.brand] + 1 },
-    cartItem: { ...session.cartItem, [session.brand]: itemId },
+    cart: { ...session.cart, [session.brand]: addItem(session.cart[session.brand], itemId) },
   })
   return <div className="screen menu-screen">
     <ScreenHeader title={brands[session.brand].name} go={go} back={`/brand/${session.brand}/format`} />
@@ -297,7 +308,7 @@ function MenuScreen({ go, session, update }: { go: Go; session: Session; update:
       {items.map((item) => <article className="dish-card" key={item.id}><button className="dish-art-button" aria-label={`Открыть ${item.title}`} onClick={() => go(`/product/${item.id}`)}><DishArt item={item} /></button><div><button className="dish-title" onClick={() => go(`/product/${item.id}`)}>{item.title}</button><small>{item.meta}</small><footer><b>{item.price ? `${item.price} ₽` : 'Уточнить'}</b>{item.price ? <button aria-label={`Добавить ${item.title}`} onClick={() => add(item.id)}><Plus /></button> : <button aria-label="Открыть" onClick={() => go(`/product/${item.id}`)}><ArrowRight /></button>}</footer></div></article>)}
     </div>
     <p className="demo-caption">Ассортимент и цены собраны по открытым меню на 11.08.2026 и могут измениться.</p>
-    {session.cart[session.brand] > 0 && <button className="floating-cart" onClick={() => go(`/cart/${session.brand}`)}><span><ShoppingBag /> {session.cart[session.brand]}</span><b>В корзину</b><span>{selectedItem.price ? `${selectedItem.price * session.cart[session.brand]} ₽` : 'Уточнить'}</span></button>}
+    {count > 0 && <button className="floating-cart" onClick={() => go(`/cart/${session.brand}`)}><span><ShoppingBag /> {count}</span><b>В корзину</b><span>{total ? `${total} ₽` : 'Уточнить'}</span></button>}
   </div>
 }
 
@@ -306,8 +317,7 @@ function ProductScreen({ go, session, update, productId }: { go: Go; session: Se
   const [count, setCount] = useState(1)
   const add = () => {
     update({
-      cart: { ...session.cart, [session.brand]: session.cart[session.brand] + count },
-      cartItem: { ...session.cartItem, [session.brand]: item.id },
+      cart: { ...session.cart, [session.brand]: addItem(session.cart[session.brand], item.id, count) },
     })
     go(`/cart/${session.brand}`)
   }
@@ -321,16 +331,23 @@ function ProductScreen({ go, session, update, productId }: { go: Go; session: Se
 }
 
 function CartScreen({ go, session, update }: { go: Go; session: Session; update: (p: Partial<Session>) => void }) {
-  const count = session.cart[session.brand]
-  const item = dishes[session.brand].find((entry) => entry.id === session.cartItem[session.brand]) || dishes[session.brand][0]
-  const total = item.price * count
+  const lines = cartEntries(session, session.brand)
+  const count = itemCount(session.cart[session.brand])
+  const total = cartTotal(session.cart[session.brand], prices(session.brand))
+  const change = (id: string, nextCount: number) => update({
+    cart: { ...session.cart, [session.brand]: setItemCount(session.cart[session.brand], id, nextCount) },
+  })
   return <div className="screen cart-screen">
     <ScreenHeader title="Корзина" go={go} back={`/brand/${session.brand}/menu`} />
     <div className="cart-brand"><BrandMark id={session.brand} small /><span><b>{brands[session.brand].name}</b><small>Отдельный заказ бренда</small></span></div>
     {count === 0 ? <div className="empty"><ShoppingBag /><h1>Корзина пока пуста</h1><p>Выберите позиции в меню этого бренда.</p><button className="cta" onClick={() => go(`/brand/${session.brand}/menu`)}>Перейти в меню</button></div> : <>
-      <article className="cart-item"><div className={`mini-art ${item.art}`} /><span><b>{item.title}</b><small>Стандартная подача</small><em>{item.price ? `${item.price} ₽` : 'Цена уточняется'}</em></span><div className="counter small"><button aria-label="Уменьшить" onClick={() => update({ cart: { ...session.cart, [session.brand]: Math.max(0, count - 1) } })}><Minus /></button><b>{count}</b><button aria-label="Увеличить" onClick={() => update({ cart: { ...session.cart, [session.brand]: count + 1 } })}><Plus /></button></div></article>
+      {lines.map(({ item, count: quantity }) => <article className="cart-item" key={item.id}>
+        <div className={`mini-art ${item.art}`} />
+        <span><b>{item.title}</b><small>Стандартная подача</small><em>{item.price ? `${item.price} ₽` : 'Цена уточняется'}</em></span>
+        <div className="counter small"><button aria-label={`Уменьшить ${item.title}`} onClick={() => change(item.id, quantity - 1)}><Minus /></button><b>{quantity}</b><button aria-label={`Увеличить ${item.title}`} onClick={() => change(item.id, quantity + 1)}><Plus /></button></div>
+      </article>)}
       <button className="add-more" onClick={() => go(`/brand/${session.brand}/menu`)}><Plus /> Добавить ещё из {brands[session.brand].name}</button>
-      <div className="cart-summary"><span>Товары <b>{total ? `${total} ₽` : 'уточняются'}</b></span><span>Доставка <b>рассчитается далее</b></span><strong>Итого <b>{total ? `${total} ₽` : 'после уточнения'}</b></strong></div>
+      <div className="cart-summary"><span>Товары <b>{total ? `${total} ₽` : 'уточняются'}</b></span><span>{session.service === 'delivery' ? 'Доставка' : 'Самовывоз'} <b>{session.service === 'delivery' ? 'рассчитается далее' : '0 ₽'}</b></span><strong>Итого <b>{total ? `${total} ₽` : 'после уточнения'}</b></strong></div>
       <p className="safe-note">Корзина сохранится, даже если оплата завершится ошибкой.</p>
       <button className="cta" onClick={() => go(`/checkout/${session.brand}`)}>К оформлению <ArrowRight /></button>
     </>}
@@ -347,8 +364,8 @@ function CheckoutScreen({ go, session, update, loading, setLoading }: { go: Go; 
   const [editing, setEditing] = useState<'time' | 'payment' | null>(null)
   const [name, setName] = useState('Гость')
   const [phone, setPhone] = useState('+7 900 000-00-00')
-  const item = dishes[session.brand].find((entry) => entry.id === session.cartItem[session.brand]) || dishes[session.brand][0]
-  const total = item.price * session.cart[session.brand]
+  const lines = cartEntries(session, session.brand)
+  const total = cartTotal(session.cart[session.brand], prices(session.brand))
   const validContacts = name.trim().length >= 2 && phone.replace(/\D/g, '').length >= 6
   const pay = () => {
     setLoading(true)
@@ -365,7 +382,7 @@ function CheckoutScreen({ go, session, update, loading, setLoading }: { go: Go; 
     <div className="checkout-block"><span><Clock3 /><b>{time}</b></span><small>Интервал подтвердит оператор</small><button onClick={() => setEditing('time')}>Выбрать</button></div>
     <div className="checkout-block"><span><CreditCard /><b>{card}</b></span><small>Без реального списания</small><button onClick={() => setEditing('payment')}>Выбрать</button></div>
     {editing && <div className="choice-sheet" role="dialog" aria-label={editing === 'time' ? 'Выбор времени' : 'Выбор оплаты'}><div><b>{editing === 'time' ? 'Когда получить заказ' : 'Способ оплаты'}</b><button aria-label="Закрыть" onClick={() => setEditing(null)}>×</button></div>{(editing === 'time' ? ['Ближайшее время', ...intervalOptions] : ['Карта •• 2481', 'При получении']).map((value) => <button className={(editing === 'time' ? time : card) === value ? 'active' : ''} key={value} onClick={() => { if (editing === 'time') setTime(value); else setCard(value); setEditing(null) }}>{value}<Check /></button>)}</div>}
-    <h2>Состав заказа</h2><div className="checkout-order"><div className={`mini-art ${item.art}`} /><span><b>{item.title}</b><small>{session.cart[session.brand]} × {item.price ? `${item.price} ₽` : 'цена уточняется'}</small></span><strong>{total ? `${total} ₽` : 'уточняется'}</strong></div>
+    <h2>Состав заказа</h2>{lines.map(({ item, count }) => <div className="checkout-order" key={item.id}><div className={`mini-art ${item.art}`} /><span><b>{item.title}</b><small>{count} × {item.price ? `${item.price} ₽` : 'цена уточняется'}</small></span><strong>{item.price ? `${item.price * count} ₽` : 'уточняется'}</strong></div>)}
     <h2>Контакты</h2><div className="contact-fields"><label><span>Имя</span><input value={name} onChange={(event) => setName(event.target.value)} /></label><label><span>Телефон</span><input inputMode="tel" value={phone} onChange={(event) => setPhone(event.target.value)} /></label></div>
     <div className="total"><span>К оплате</span><b>{total ? `${total} ₽` : 'уточняется'}</b></div>
     <button className="cta" disabled={loading || !validContacts || !validTime} onClick={pay}>{loading ? <><span className="spinner" /> Проверяем…</> : <>Подтвердить заказ <ArrowRight /></>}</button>
@@ -375,11 +392,11 @@ function CheckoutScreen({ go, session, update, loading, setLoading }: { go: Go; 
 }
 
 function PaymentError({ go, session }: { go: Go; session: Session }) {
-  return <div className="screen status-screen error-screen"><div className="status-icon"><CircleAlert /></div><p className="eyebrow">Оплата не завершена</p><h1>Корзина на месте</h1><p>Позиции, адрес и формат сохранены. Можно вернуться к оплате без повторного сбора заказа.</p><div className="saved-cart"><BrandMark id={session.brand} small /><span><b>{brands[session.brand].name}</b><small>{session.cart[session.brand]} позиция · параметры сохранены</small></span><Check /></div><button className="cta" onClick={() => go(`/checkout/${session.brand}`)}>Вернуться к оплате</button><button className="text-button" onClick={() => go(`/cart/${session.brand}`)}>Изменить корзину</button></div>
+  return <div className="screen status-screen error-screen"><div className="status-icon"><CircleAlert /></div><p className="eyebrow">Оплата не завершена</p><h1>Корзина на месте</h1><p>Позиции, адрес и формат сохранены. Можно вернуться к оплате без повторного сбора заказа.</p><div className="saved-cart"><BrandMark id={session.brand} small /><span><b>{brands[session.brand].name}</b><small>{itemCount(session.cart[session.brand])} шт. · параметры сохранены</small></span><Check /></div><button className="cta" onClick={() => go(`/checkout/${session.brand}`)}>Вернуться к оплате</button><button className="text-button" onClick={() => go(`/cart/${session.brand}`)}>Изменить корзину</button></div>
 }
 
 function OrderSuccess({ go, session, update }: { go: Go; session: Session; update: (p: Partial<Session>) => void }) {
-  return <div className="screen status-screen success-screen"><div className="status-icon"><PackageCheck /></div><p className="eyebrow">Сценарий завершён</p><h1>Заказ подтверждён</h1><p>№ RP-1042 · {brands[session.brand].name}<br />Статус сохранён в истории действий.</p><div className="timeline"><i /><span><b>Принят</b><small>12:42</small></span><i /><span><b>Готовим</b><small>следующий этап</small></span></div><button className="cta" onClick={() => { update({ cart: { ...session.cart, [session.brand]: 0 }, paymentFailed: false }); go('/') }}>На главный экран</button><button className="text-button" onClick={() => go('/history')}>История заказов</button></div>
+  return <div className="screen status-screen success-screen"><div className="status-icon"><PackageCheck /></div><p className="eyebrow">Сценарий завершён</p><h1>Заказ подтверждён</h1><p>№ RP-1042 · {brands[session.brand].name}<br />Статус сохранён в истории действий.</p><div className="timeline"><i /><span><b>Принят</b><small>12:42</small></span><i /><span><b>Готовим</b><small>следующий этап</small></span></div><button className="cta" onClick={() => { update({ cart: { ...session.cart, [session.brand]: {} }, paymentFailed: false }); go('/') }}>На главный экран</button><button className="text-button" onClick={() => go('/history')}>История заказов</button></div>
 }
 
 function BookingScreen({ go, session, update }: { go: Go; session: Session; update: (p: Partial<Session>) => void }) {
@@ -433,7 +450,7 @@ function RepeatScreen({ go, session, update }: { go: Go; session: Session; updat
   const [checked, setChecked] = useState(false)
   const repeat = () => {
     setChecked(true)
-    update({ brand: 'pitcofe', cart: { ...session.cart, pitcofe: 2 }, cartItem: { ...session.cartItem, pitcofe: 'carbonara' } })
+    update({ brand: 'pitcofe', cart: { ...session.cart, pitcofe: { carbonara: 1, borsch: 1 } } })
   }
   return <div className="screen repeat-screen"><ScreenHeader title="Повтор заказа" go={go} back="/history" /><p className="step">Проверка перед корзиной</p><h1>Почти как<br />в прошлый раз</h1><p className="lead">Цена и доступность проверяются заново для выбранного адреса.</p><div className="repeat-list"><span><Check /><b>Карбонара</b><em>529 ₽</em></span><span><Check /><b>Борщ с говядиной</b><em>529 ₽</em></span><span className="unavailable"><CircleAlert /><b>Домашний лимонад</b><em>недоступен</em></span></div>{checked && <div className="success-note"><Check /><span><b>2 позиции добавлены</b><small>Недоступная позиция пропущена. Корзина относится только к Питькофе.</small></span></div>}<button className="cta" onClick={checked ? () => go('/cart/pitcofe') : repeat}>{checked ? 'Открыть корзину' : 'Проверить и повторить'} <ArrowRight /></button></div>
 }
