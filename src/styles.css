@@ -332,13 +332,10 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .loyalty-card.tomato { background: #bd3e2d; }
 .loyalty-card > span { display: flex; align-items: center; justify-content: space-between; }
 .loyalty-card > span small { font-size: 9px; opacity: .75; }
-.qr-demo { width: 88px; height: 88px; display: grid; grid-template-columns: repeat(3,1fr); gap: 5px; padding: 7px; background: #fff; border-radius: 12px; align-self: end; }
-.qr-demo i { background: #201e1b; border-radius: 2px; }
-.qr-demo i:nth-child(2), .qr-demo i:nth-child(4), .qr-demo i:nth-child(8) { background: white; }
-.loyalty-card footer { display: flex; justify-content: space-between; align-items: end; }
-.loyalty-card footer span { display: flex; flex-direction: column; }
-.loyalty-card footer small { font-size: 9px; opacity: .65; }
-.loyalty-card footer b { font-size: 20px; }
+.loyalty-card h2 { margin: 0 0 8px; font-size: 23px; line-height: 1.1; }
+.loyalty-card p { max-width: 260px; margin: 0; font-size: 12px; line-height: 1.45; }
+.loyalty-card a { display: inline-flex; align-items: center; gap: 8px; width: fit-content; color: inherit; font-size: 12px; font-weight: 800; text-decoration: underline; text-underline-offset: 4px; }
+.loyalty-card a svg { width: 16px; }
 
 .offer-main { min-height: 225px; display: flex; flex-direction: column; align-items: flex-start; padding: 22px; border-radius: 24px; background: #f0b43f; margin: 23px 0 30px; position: relative; overflow: hidden; }
 .offer-main::after { content: '↻'; position: absolute; right: -12px; bottom: -53px; font-size: 180px; opacity: .12; font-weight: 800; }

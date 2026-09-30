@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
-  ArrowLeft, ArrowRight, BadgePercent, CalendarDays, CakeSlice, Check,
+  ArrowLeft, ArrowRight, CalendarDays, CakeSlice, Check,
   ChevronRight, CircleAlert, Clock3, Coffee, CreditCard, History,
   Home, IceCreamBowl, MapPin, Minus, PackageCheck, Plus, Search, ShoppingBag,
   Sparkles, Store, TicketCheck, Truck, UserRound, UsersRound, UtensilsCrossed,
@@ -30,6 +30,7 @@ type Session = {
   address: string
   orders: Order[]
   repeatOrderId: string | null
+  profile: { name: string; phone: string }
   booking: {
     brand: 'pitcofe' | 'mamadonna'
     date: string
@@ -98,6 +99,7 @@ const initialSession: Session = {
   address: 'ул. Пушкинская, 120А',
   orders: [],
   repeatOrderId: null,
+  profile: { name: '', phone: '' },
   booking: { brand: 'mamadonna', date: 'Сегодня', time: '19:30', guests: 2 },
   cake: { kind: 'Праздничный', filling: 'Чёрный лес', weight: '2 кг', date: cakeDateOptions()[0] },
 }
@@ -113,6 +115,7 @@ function readSession(): Session {
     })) as Record<BrandId, CartLines>
     delete stored.cartItem
     if (!Array.isArray(stored.orders)) stored.orders = []
+    stored.profile = { ...initialSession.profile, ...stored.profile }
     if (!bookingDateOptions().includes(stored.booking?.date)) stored.booking.date = 'Сегодня'
     if (!cakeDateOptions().includes(stored.cake?.date)) stored.cake.date = cakeDateOptions()[0]
     if (stored.address?.includes('· демо')) stored.address = stored.address.replace(' · демо', '').replace('Пушкинская, 120', 'Пушкинская, 120А')
@@ -182,7 +185,7 @@ export function App() {
     if (route === '/search') return <SearchScreen go={go} session={session} />
     if (route === '/loyalty') return <LoyaltyScreen go={go} />
     if (route === '/history') return <HistoryScreen go={go} session={session} update={update} />
-    if (route === '/profile') return <ProfileScreen go={go} />
+    if (route === '/profile') return <ProfileScreen go={go} session={session} update={update} />
     if (route === '/offers') return <OffersScreen go={go} />
     if (route === '/booking') return <BookingScreen go={go} session={session} update={update} />
     if (route === '/booking/success') return <BookingSuccess go={go} session={session} />
@@ -383,11 +386,9 @@ function CheckoutScreen({ go, session, update, loading, setLoading }: { go: Go; 
   const validTime = time === 'Ближайшее время' || intervalOptions.includes(time)
   const [card, setCard] = useState('Карта •• 2481')
   const [editing, setEditing] = useState<'time' | 'payment' | null>(null)
-  const [name, setName] = useState('Гость')
-  const [phone, setPhone] = useState('+7 900 000-00-00')
   const lines = cartEntries(session, session.brand)
   const total = cartTotal(session.cart[session.brand], prices(session.brand))
-  const validContacts = name.trim().length >= 2 && phone.replace(/\D/g, '').length >= 6
+  const validContacts = session.profile.name.trim().length >= 2 && session.profile.phone.replace(/\D/g, '').length >= 11
   const pay = () => {
     setLoading(true)
     window.setTimeout(() => {
@@ -416,7 +417,7 @@ function CheckoutScreen({ go, session, update, loading, setLoading }: { go: Go; 
     <div className="checkout-block"><span><CreditCard /><b>{card}</b></span><small>Без реального списания</small><button onClick={() => setEditing('payment')}>Выбрать</button></div>
     {editing && <div className="choice-sheet" role="dialog" aria-label={editing === 'time' ? 'Выбор времени' : 'Выбор оплаты'}><div><b>{editing === 'time' ? 'Когда получить заказ' : 'Способ оплаты'}</b><button aria-label="Закрыть" onClick={() => setEditing(null)}>×</button></div>{(editing === 'time' ? ['Ближайшее время', ...intervalOptions] : ['Карта •• 2481', 'При получении']).map((value) => <button className={(editing === 'time' ? time : card) === value ? 'active' : ''} key={value} onClick={() => { if (editing === 'time') setTime(value); else setCard(value); setEditing(null) }}>{value}<Check /></button>)}</div>}
     <h2>Состав заказа</h2>{lines.map(({ item, count }) => <div className="checkout-order" key={item.id}><div className={`mini-art ${item.art}`} /><span><b>{item.title}</b><small>{count} × {item.price ? `${item.price} ₽` : 'цена уточняется'}</small></span><strong>{item.price ? `${item.price * count} ₽` : 'уточняется'}</strong></div>)}
-    <h2>Контакты</h2><div className="contact-fields"><label><span>Имя</span><input value={name} onChange={(event) => setName(event.target.value)} /></label><label><span>Телефон</span><input inputMode="tel" value={phone} onChange={(event) => setPhone(event.target.value)} /></label></div>
+    <h2>Контакты</h2><div className="contact-fields"><label><span>Имя</span><input value={session.profile.name} onChange={(event) => update({ profile: { ...session.profile, name: event.target.value } })} /></label><label><span>Телефон</span><input inputMode="tel" value={session.profile.phone} onChange={(event) => update({ profile: { ...session.profile, phone: event.target.value } })} /></label></div>
     <div className="total"><span>К оплате</span><b>{total ? `${total} ₽` : 'уточняется'}</b></div>
     <button className="cta" disabled={loading || !validContacts || !validTime} onClick={pay}>{loading ? <><span className="spinner" /> Проверяем…</> : <>Подтвердить заказ <ArrowRight /></>}</button>
     {!validContacts && <p className="field-error">Укажите имя и телефон, чтобы продолжить.</p>}
@@ -469,11 +470,11 @@ function CakeSuccess({ go, session }: { go: Go; session: Session }) {
   return <div className="screen status-screen cake-success"><div className="status-icon"><CakeSlice /></div><p className="eyebrow">Параметры сохранены</p><h1>Осталось<br />согласовать детали</h1><p>{kind} · «{filling}» · {weight}<br />К {date}</p><div className="ticket"><span>Заявка</span><b>ET–{String(cakeDates.indexOf(date) + 1).padStart(2, '0')}</b></div><button className="cta" onClick={() => go('/')}>На главный экран</button><button className="text-button" onClick={() => go('/cake')}>Изменить параметры</button></div>
 }
 
-function ProfileScreen({ go }: { go: Go }) {
+function ProfileScreen({ go, session, update }: { go: Go; session: Session; update: (p: Partial<Session>) => void }) {
   const [saved, setSaved] = useState(false)
-  const [name, setName] = useState('Гость')
-  const [phone, setPhone] = useState('+7 ')
-  return <div className="screen profile-screen"><ScreenHeader title="Профиль" go={go} /><p className="eyebrow">Личные данные</p><h1>Контакты<br />для оформления</h1><p className="lead">Данные хранятся только в текущей вкладке прототипа и помогают пройти сценарий оформления.</p><label className="profile-field"><span>Имя</span><input value={name} onChange={(event) => { setName(event.target.value); setSaved(false) }} /></label><label className="profile-field"><span>Телефон</span><input inputMode="tel" value={phone} onChange={(event) => { setPhone(event.target.value); setSaved(false) }} /></label><button className="cta" disabled={!name.trim() || phone.replace(/\D/g, '').length < 6} onClick={() => setSaved(true)}>{saved ? <><Check /> Сохранено</> : 'Сохранить контакты'}</button><div className="profile-links"><button onClick={() => go('/history')}><History /><span><b>История действий</b><small>заказы и запросы столика</small></span><ChevronRight /></button><button onClick={() => go('/loyalty')}><TicketCheck /><span><b>Карты лояльности</b><small>правила каждого бренда отдельно</small></span><ChevronRight /></button></div></div>
+  const [name, setName] = useState(session.profile.name)
+  const [phone, setPhone] = useState(session.profile.phone)
+  return <div className="screen profile-screen"><ScreenHeader title="Профиль" go={go} /><p className="eyebrow">Личные данные</p><h1>Контакты<br />для оформления</h1><p className="lead">Сохранённые контакты появятся при оформлении заказа.</p><label className="profile-field"><span>Имя</span><input value={name} onChange={(event) => { setName(event.target.value); setSaved(false) }} /></label><label className="profile-field"><span>Телефон</span><input inputMode="tel" value={phone} onChange={(event) => { setPhone(event.target.value); setSaved(false) }} /></label><button className="cta" disabled={name.trim().length < 2 || phone.replace(/\D/g, '').length < 11} onClick={() => { update({ profile: { name: name.trim(), phone } }); setSaved(true) }}>{saved ? <><Check /> Сохранено</> : 'Сохранить контакты'}</button><div className="profile-links"><button onClick={() => go('/history')}><History /><span><b>История заказов</b><small>оформленные заказы и повтор</small></span><ChevronRight /></button><button onClick={() => go('/loyalty')}><TicketCheck /><span><b>Карты лояльности</b><small>правила каждого бренда отдельно</small></span><ChevronRight /></button></div></div>
 }
 
 function HistoryScreen({ go, session, update }: { go: Go; session: Session; update: (p: Partial<Session>) => void }) {
@@ -513,7 +514,15 @@ function RepeatScreen({ go, session, update }: { go: Go; session: Session; updat
 
 function LoyaltyScreen({ go }: { go: Go }) {
   const [brand, setBrand] = useState<BrandId>('pitcofe')
-  return <div className="screen loyalty-screen"><ScreenHeader title="Лояльность" go={go} /><p className="step">Концепция</p><h1>Карты рядом.<br />Правила раздельно.</h1><p className="lead">Общий баланс между брендами не предполагается без проверки внутренних правил.</p><div className="loyalty-brands">{(['pitcofe', 'mamadonna'] as BrandId[]).map((id) => <button className={brand === id ? 'active' : ''} key={id} onClick={() => setBrand(id)}><BrandMark id={id} small />{brands[id].name}</button>)}</div><div className={`loyalty-card ${brands[brand].tone}`}><span><BrandMark id={brand} small /><small>Карта бренда</small></span><div className="qr-demo" aria-label="Код карты"><i /><i /><i /><i /><i /><i /><i /><i /><i /></div><footer><span><small>Баланс</small><b>уточняется</b></span><BadgePercent /></footer></div><div className="info-note"><TicketCheck /><span><b>Проверить перед пилотом</b><small>Начисление, списание, срок действия и возможность переноса карт между каналами.</small></span></div></div>
+  const info = brand === 'pitcofe'
+    ? { title: 'Бонусы Питькофе', detail: 'Баланс и доступные бонусы можно посмотреть в приложении Питькофе.', link: 'Страница приложения', href: 'https://apps.apple.com/ru/app/id1608159331' }
+    : { title: 'Бонусы MamaDonna', detail: 'У MamaDonna свои правила начисления и списания бонусов.', link: 'Условия программы', href: 'https://mamadonna.ru/bonuses/' }
+  return <div className="screen loyalty-screen">
+    <ScreenHeader title="Лояльность" go={go} />
+    <p className="step">Бонусные программы</p><h1>Выберите<br />ресторан</h1><p className="lead">У каждого бренда своя программа и свой баланс.</p>
+    <div className="loyalty-brands">{(['pitcofe', 'mamadonna'] as BrandId[]).map((id) => <button className={brand === id ? 'active' : ''} key={id} onClick={() => setBrand(id)}><BrandMark id={id} small />{brands[id].name}</button>)}</div>
+    <div className={`loyalty-card ${brands[brand].tone}`}><span><BrandMark id={brand} small /><small>{brands[brand].name}</small></span><div><h2>{info.title}</h2><p>{info.detail}</p></div><a href={info.href} target="_blank" rel="noreferrer">{info.link} <ArrowRight /></a></div>
+  </div>
 }
 
 function OffersScreen({ go }: { go: Go }) {
