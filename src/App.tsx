@@ -3,21 +3,33 @@ import {
   ArrowLeft, ArrowRight, BadgePercent, CalendarDays, CakeSlice, Check,
   ChevronRight, CircleAlert, Clock3, Coffee, CreditCard, History,
   Home, IceCreamBowl, MapPin, Minus, PackageCheck, Plus, Search, ShoppingBag,
-  Sparkles, Star, Store, TicketCheck, Truck, UserRound, UsersRound, UtensilsCrossed,
+  Sparkles, Store, TicketCheck, Truck, UserRound, UsersRound, UtensilsCrossed,
 } from 'lucide-react'
 import { LocationMap } from './LocationMap'
 import { locationsByBrand } from './locations'
-import { bookingDateOptions, cakeDateOptions, formatKrasnodarDate, isFutureBookingTime, upcomingOrderIntervals } from './lib/schedule'
+import { bookingDateOptions, cakeDateOptions, isFutureBookingTime, upcomingOrderIntervals } from './lib/schedule'
 import { addItem, cartTotal, itemCount, setItemCount, type CartLines } from './lib/cart'
 
 type BrandId = 'pitcofe' | 'mamadonna' | 'esttort' | 'cream'
 type Service = 'delivery' | 'pickup'
+type Order = {
+  id: string
+  brand: BrandId
+  service: Service
+  address: string
+  createdAt: string
+  lines: CartLines
+  total: number
+}
+
 type Session = {
   brand: BrandId
   service: Service
   cart: Record<BrandId, CartLines>
   paymentFailed: boolean
   address: string
+  orders: Order[]
+  repeatOrderId: string | null
   booking: {
     brand: 'pitcofe' | 'mamadonna'
     date: string
@@ -84,6 +96,8 @@ const initialSession: Session = {
   cart: emptyCart(),
   paymentFailed: false,
   address: 'ул. Пушкинская, 120А',
+  orders: [],
+  repeatOrderId: null,
   booking: { brand: 'mamadonna', date: 'Сегодня', time: '19:30', guests: 2 },
   cake: { kind: 'Праздничный', filling: 'Чёрный лес', weight: '2 кг', date: cakeDateOptions()[0] },
 }
@@ -98,6 +112,7 @@ function readSession(): Session {
       return [brand, typeof value === 'number' ? (value > 0 ? { [item]: value } : {}) : (value || {})]
     })) as Record<BrandId, CartLines>
     delete stored.cartItem
+    if (!Array.isArray(stored.orders)) stored.orders = []
     if (!bookingDateOptions().includes(stored.booking?.date)) stored.booking.date = 'Сегодня'
     if (!cakeDateOptions().includes(stored.cake?.date)) stored.cake.date = cakeDateOptions()[0]
     if (stored.address?.includes('· демо')) stored.address = stored.address.replace(' · демо', '').replace('Пушкинская, 120', 'Пушкинская, 120А')
@@ -162,7 +177,7 @@ export function App() {
     if (route === '/order') return <OrderBrandScreen go={go} update={update} />
     if (route === '/search') return <SearchScreen go={go} session={session} />
     if (route === '/loyalty') return <LoyaltyScreen go={go} />
-    if (route === '/history') return <HistoryScreen go={go} update={update} />
+    if (route === '/history') return <HistoryScreen go={go} session={session} update={update} />
     if (route === '/profile') return <ProfileScreen go={go} />
     if (route === '/offers') return <OffersScreen go={go} />
     if (route === '/booking') return <BookingScreen go={go} session={session} update={update} />
@@ -171,7 +186,7 @@ export function App() {
     if (route === '/cake/success') return <CakeSuccess go={go} session={session} />
     if (route === '/repeat') return <RepeatScreen go={go} session={session} update={update} />
     if (route === '/payment-error') return <PaymentError go={go} session={session} />
-    if (route === '/order/success') return <OrderSuccess go={go} session={session} update={update} />
+    if (route === '/order/success') return <OrderSuccess go={go} session={session} />
     if (route.startsWith('/brand/') && route.endsWith('/format')) return <FormatScreen go={go} session={session} update={update} />
     if (route.startsWith('/brand/') && route.endsWith('/menu')) return <MenuScreen go={go} session={session} update={update} />
     if (route.startsWith('/brand/')) return <BrandScreen go={go} session={session} />
@@ -372,7 +387,19 @@ function CheckoutScreen({ go, session, update, loading, setLoading }: { go: Go; 
     window.setTimeout(() => {
       setLoading(false)
       if (!session.paymentFailed) { update({ paymentFailed: true }); go('/payment-error') }
-      else go('/order/success')
+      else {
+        const order: Order = {
+          id: `RP-${Date.now()}`, brand: session.brand, service: session.service,
+          address: session.address, createdAt: new Date().toISOString(),
+          lines: { ...session.cart[session.brand] }, total,
+        }
+        update({
+          orders: [order, ...session.orders],
+          cart: { ...session.cart, [session.brand]: {} },
+          paymentFailed: false,
+        })
+        go('/order/success')
+      }
     }, 650)
   }
   return <div className="screen checkout-screen">
@@ -395,8 +422,9 @@ function PaymentError({ go, session }: { go: Go; session: Session }) {
   return <div className="screen status-screen error-screen"><div className="status-icon"><CircleAlert /></div><p className="eyebrow">Оплата не завершена</p><h1>Корзина на месте</h1><p>Позиции, адрес и формат сохранены. Можно вернуться к оплате без повторного сбора заказа.</p><div className="saved-cart"><BrandMark id={session.brand} small /><span><b>{brands[session.brand].name}</b><small>{itemCount(session.cart[session.brand])} шт. · параметры сохранены</small></span><Check /></div><button className="cta" onClick={() => go(`/checkout/${session.brand}`)}>Вернуться к оплате</button><button className="text-button" onClick={() => go(`/cart/${session.brand}`)}>Изменить корзину</button></div>
 }
 
-function OrderSuccess({ go, session, update }: { go: Go; session: Session; update: (p: Partial<Session>) => void }) {
-  return <div className="screen status-screen success-screen"><div className="status-icon"><PackageCheck /></div><p className="eyebrow">Сценарий завершён</p><h1>Заказ подтверждён</h1><p>№ RP-1042 · {brands[session.brand].name}<br />Статус сохранён в истории действий.</p><div className="timeline"><i /><span><b>Принят</b><small>12:42</small></span><i /><span><b>Готовим</b><small>следующий этап</small></span></div><button className="cta" onClick={() => { update({ cart: { ...session.cart, [session.brand]: {} }, paymentFailed: false }); go('/') }}>На главный экран</button><button className="text-button" onClick={() => go('/history')}>История заказов</button></div>
+function OrderSuccess({ go, session }: { go: Go; session: Session }) {
+  if (!session.orders.length) return <div className="screen status-screen"><h1>Заказ не найден</h1><p>Оформите заказ, чтобы увидеть подтверждение и повторить его из истории.</p><button className="cta" onClick={() => go('/order')}>К выбору еды</button></div>
+  return <div className="screen status-screen success-screen"><div className="status-icon"><PackageCheck /></div><p className="eyebrow">Сценарий завершён</p><h1>Заказ подтверждён</h1><p>№ {session.orders[0]?.id || 'RP'} · {brands[session.brand].name}<br />Заказ сохранён в истории.</p><div className="timeline"><i /><span><b>Принят</b><small>сейчас</small></span><i /><span><b>Следующий шаг</b><small>подтверждение</small></span></div><button className="cta" onClick={() => go('/')}>На главный экран</button><button className="text-button" onClick={() => go('/history')}>История заказов</button></div>
 }
 
 function BookingScreen({ go, session, update }: { go: Go; session: Session; update: (p: Partial<Session>) => void }) {
@@ -442,17 +470,39 @@ function ProfileScreen({ go }: { go: Go }) {
   return <div className="screen profile-screen"><ScreenHeader title="Профиль" go={go} /><p className="eyebrow">Личные данные</p><h1>Контакты<br />для оформления</h1><p className="lead">Данные хранятся только в текущей вкладке прототипа и помогают пройти сценарий оформления.</p><label className="profile-field"><span>Имя</span><input value={name} onChange={(event) => { setName(event.target.value); setSaved(false) }} /></label><label className="profile-field"><span>Телефон</span><input inputMode="tel" value={phone} onChange={(event) => { setPhone(event.target.value); setSaved(false) }} /></label><button className="cta" disabled={!name.trim() || phone.replace(/\D/g, '').length < 6} onClick={() => setSaved(true)}>{saved ? <><Check /> Сохранено</> : 'Сохранить контакты'}</button><div className="profile-links"><button onClick={() => go('/history')}><History /><span><b>История действий</b><small>заказы и запросы столика</small></span><ChevronRight /></button><button onClick={() => go('/loyalty')}><TicketCheck /><span><b>Карты лояльности</b><small>правила каждого бренда отдельно</small></span><ChevronRight /></button></div></div>
 }
 
-function HistoryScreen({ go, update }: { go: Go; update: (p: Partial<Session>) => void }) {
-  return <div className="screen history-screen"><ScreenHeader title="Мои действия" go={go} /><p className="eyebrow">История</p><h1>Вернуться<br />к привычному</h1><article className="history-card"><div><BrandMark id="pitcofe" small /><span><b>Питькофе</b><small>{formatKrasnodarDate(-4)} · доставка</small></span></div><h3>Карбонара, борщ с говядиной</h3><footer><b>1 058 ₽</b><button onClick={() => { update({ brand: 'pitcofe' }); go('/repeat') }}>Повторить <ArrowRight /></button></footer></article><h2>Посещения</h2><article className="visit-card"><Star /><span><b>MamaDonna</b><small>{formatKrasnodarDate(-9)} · 2 гостя</small></span><button onClick={() => go('/booking')}>Снова</button></article><div className="empty compact"><History /><h3>Других заказов пока нет</h3><p>Здесь появятся заказы и запросы каждого бренда.</p></div></div>
+function HistoryScreen({ go, session, update }: { go: Go; session: Session; update: (p: Partial<Session>) => void }) {
+  return <div className="screen history-screen">
+    <ScreenHeader title="Мои действия" go={go} />
+    <p className="eyebrow">История</p><h1>Ваши заказы</h1>
+    {session.orders.length ? session.orders.map((order) => <article className="history-card" key={order.id}>
+      <div><BrandMark id={order.brand} small /><span><b>{brands[order.brand].name}</b><small>{new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Moscow' }).format(new Date(order.createdAt))} · {order.service === 'delivery' ? 'доставка' : 'самовывоз'}</small></span></div>
+      <h3>{Object.keys(order.lines).map((id) => dishes[order.brand].find((item) => item.id === id)?.title || 'Позиция вне меню').join(', ')}</h3>
+      <footer><b>{order.total} ₽</b><button onClick={() => { update({ brand: order.brand, repeatOrderId: order.id }); go('/repeat') }}>Повторить <ArrowRight /></button></footer>
+    </article>) : <div className="empty compact"><History /><h3>Заказов пока нет</h3><p>После оформления заказ появится здесь, и его можно будет повторить.</p><button onClick={() => go('/order')}>Выбрать еду</button></div>}
+  </div>
 }
 
 function RepeatScreen({ go, session, update }: { go: Go; session: Session; update: (p: Partial<Session>) => void }) {
   const [checked, setChecked] = useState(false)
+  const order = session.orders.find((entry) => entry.id === session.repeatOrderId)
+  if (!order) return <div className="screen repeat-screen"><ScreenHeader title="Повтор заказа" go={go} back="/history" /><div className="empty"><History /><h1>Нет заказа для повтора</h1><p>Выберите заказ в истории.</p><button className="cta" onClick={() => go('/history')}>Открыть историю</button></div></div>
+  const available = Object.entries(order.lines).filter(([id]) => dishes[order.brand].some((item) => item.id === id && item.price > 0))
+  const unavailable = Object.entries(order.lines).filter(([id]) => !dishes[order.brand].some((item) => item.id === id && item.price > 0))
   const repeat = () => {
+    update({ brand: order.brand, cart: { ...session.cart, [order.brand]: Object.fromEntries(available) } })
     setChecked(true)
-    update({ brand: 'pitcofe', cart: { ...session.cart, pitcofe: { carbonara: 1, borsch: 1 } } })
   }
-  return <div className="screen repeat-screen"><ScreenHeader title="Повтор заказа" go={go} back="/history" /><p className="step">Проверка перед корзиной</p><h1>Почти как<br />в прошлый раз</h1><p className="lead">Цена и доступность проверяются заново для выбранного адреса.</p><div className="repeat-list"><span><Check /><b>Карбонара</b><em>529 ₽</em></span><span><Check /><b>Борщ с говядиной</b><em>529 ₽</em></span><span className="unavailable"><CircleAlert /><b>Домашний лимонад</b><em>недоступен</em></span></div>{checked && <div className="success-note"><Check /><span><b>2 позиции добавлены</b><small>Недоступная позиция пропущена. Корзина относится только к Питькофе.</small></span></div>}<button className="cta" onClick={checked ? () => go('/cart/pitcofe') : repeat}>{checked ? 'Открыть корзину' : 'Проверить и повторить'} <ArrowRight /></button></div>
+  return <div className="screen repeat-screen">
+    <ScreenHeader title="Повтор заказа" go={go} back="/history" />
+    <p className="step">Проверка перед корзиной</p><h1>Повторить заказ</h1>
+    <p className="lead">Цена и доступность проверяются заново для выбранного адреса.</p>
+    <div className="repeat-list">
+      {available.map(([id, count]) => { const item = dishes[order.brand].find((entry) => entry.id === id)!; return <span key={id}><Check /><b>{item.title} · {count} шт.</b><em>{item.price * count} ₽</em></span> })}
+      {unavailable.map(([id]) => <span className="unavailable" key={id}><CircleAlert /><b>Позиция вне текущего меню</b><em>не добавлена</em></span>)}
+    </div>
+    {checked && <div className="success-note"><Check /><span><b>{available.length} позиции добавлены</b><small>Недоступные позиции пропущены. Корзина относится только к {brands[order.brand].name}.</small></span></div>}
+    <button className="cta" disabled={!available.length} onClick={checked ? () => go(`/cart/${order.brand}`) : repeat}>{checked ? 'Открыть корзину' : 'Проверить и повторить'} <ArrowRight /></button>
+  </div>
 }
 
 function LoyaltyScreen({ go }: { go: Go }) {

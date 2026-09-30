@@ -126,6 +126,15 @@ await flow.getByRole('button', { name: /Подтвердить заказ/ }).cl
 await flow.getByRole('heading', { name: 'Заказ подтверждён' }).waitFor()
 report.scenarios.push({ name: 'заказ → ошибка оплаты → восстановление', status: 'passed' })
 
+await flow.getByRole('button', { name: 'История заказов' }).click()
+await flow.getByRole('heading', { name: 'Ваши заказы' }).waitFor()
+if (await flow.locator('.history-card').count() !== 1) errors.push('history: successful order was not recorded')
+await flow.getByRole('button', { name: /Повторить/ }).click()
+await flow.getByRole('button', { name: 'Проверить и повторить' }).click()
+await flow.getByRole('button', { name: 'Открыть корзину' }).click()
+await flow.getByText('Ньокки с говяжьими щёчками').waitFor()
+report.scenarios.push({ name: 'успешный заказ → история → повтор', status: 'passed' })
+
 await flow.goto(new URL('#/booking', base).href)
 await flow.getByRole('button', { name: /Питькофе/ }).click()
 await flow.getByRole('button', { name: 'Завтра' }).click()
