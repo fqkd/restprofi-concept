@@ -247,7 +247,7 @@ function HomeScreen({ go, session, update }: { go: Go; session: Session; update:
   return <div className="screen home-screen">
     <div className="home-heading"><div><p className="eyebrow">Добрый день</p><h1>Что хочется<br />сегодня?</h1></div><button className="avatar" aria-label="Профиль" onClick={() => go('/profile')}><UserRound /></button></div>
     <button className="context-card" onClick={() => go(`/brand/${session.brand}/format`)}>
-      <MapPin /><span><b>{session.service === 'delivery' ? 'Проверить доставку' : 'Изменить самовывоз'}</b><small>{session.address}</small></span><ChevronRight />
+      <MapPin /><span><b>{session.brand === 'cream' ? 'Что известно о Cream' : session.service === 'delivery' ? 'Проверить доставку' : 'Изменить самовывоз'}</b><small>{session.brand === 'cream' ? 'Адрес и заказ пока не подтверждены' : session.address}</small></span><ChevronRight />
     </button>
     <div className="task-grid">
       <button className="task task-order" onClick={() => go('/order')}><ShoppingBag /><b>Заказать еду</b><span>сначала бренд, затем формат</span></button>
@@ -397,7 +397,7 @@ function CheckoutScreen({ go, session, update, loading, setLoading }: { go: Go; 
   useEffect(() => { const timer = window.setInterval(() => setNow(new Date()), 60_000); return () => window.clearInterval(timer) }, [])
   const intervalOptions = upcomingOrderIntervals(now)
   const validTime = time === 'Ближайшее время' || intervalOptions.includes(time)
-  const [card, setCard] = useState('Карта •• 2481')
+  const [card, setCard] = useState('Банковская карта')
   const [editing, setEditing] = useState<'time' | 'payment' | null>(null)
   const lines = cartEntries(session, session.brand)
   const total = cartTotal(session.cart[session.brand], prices(session.brand))
@@ -427,8 +427,8 @@ function CheckoutScreen({ go, session, update, loading, setLoading }: { go: Go; 
     <p className="step">03 / Подтверждение</p><h1>Проверьте заказ</h1>
     <div className="checkout-block"><span>{session.service === 'delivery' ? <Truck /> : <Store />}<b>{session.service === 'delivery' ? 'Доставка' : 'Самовывоз'}</b></span><small>{session.address}</small><button onClick={() => go(`/brand/${session.brand}/format`)}>Изменить</button></div>
     <div className="checkout-block"><span><Clock3 /><b>{time}</b></span><small>Интервал подтвердит оператор</small><button onClick={() => setEditing('time')}>Выбрать</button></div>
-    <div className="checkout-block"><span><CreditCard /><b>{card}</b></span><small>Без реального списания</small><button onClick={() => setEditing('payment')}>Выбрать</button></div>
-    {editing && <div className="choice-sheet" role="dialog" aria-label={editing === 'time' ? 'Выбор времени' : 'Выбор оплаты'}><div><b>{editing === 'time' ? 'Когда получить заказ' : 'Способ оплаты'}</b><button aria-label="Закрыть" onClick={() => setEditing(null)}>×</button></div>{(editing === 'time' ? ['Ближайшее время', ...intervalOptions] : ['Карта •• 2481', 'При получении']).map((value) => <button className={(editing === 'time' ? time : card) === value ? 'active' : ''} key={value} onClick={() => { if (editing === 'time') setTime(value); else setCard(value); setEditing(null) }}>{value}<Check /></button>)}</div>}
+    <div className="checkout-block"><span><CreditCard /><b>{card}</b></span><small>Выберите удобный способ</small><button onClick={() => setEditing('payment')}>Выбрать</button></div>
+    {editing && <div className="choice-sheet" role="dialog" aria-label={editing === 'time' ? 'Выбор времени' : 'Выбор оплаты'}><div><b>{editing === 'time' ? 'Когда получить заказ' : 'Способ оплаты'}</b><button aria-label="Закрыть" onClick={() => setEditing(null)}>×</button></div>{(editing === 'time' ? ['Ближайшее время', ...intervalOptions] : ['Банковская карта', 'При получении']).map((value) => <button className={(editing === 'time' ? time : card) === value ? 'active' : ''} key={value} onClick={() => { if (editing === 'time') setTime(value); else setCard(value); setEditing(null) }}>{value}<Check /></button>)}</div>}
     <h2>Состав заказа</h2>{lines.map(({ item, count }) => <div className="checkout-order" key={item.id}><div className={`mini-art ${item.art}`} /><span><b>{item.title}</b><small>{count} × {item.price ? `${item.price} ₽` : 'цена уточняется'}</small></span><strong>{item.price ? `${item.price * count} ₽` : 'уточняется'}</strong></div>)}
     <h2>Контакты</h2><div className="contact-fields"><label><span>Имя</span><input value={session.profile.name} onChange={(event) => update({ profile: { ...session.profile, name: event.target.value } })} /></label><label><span>Телефон</span><input inputMode="tel" value={session.profile.phone} onChange={(event) => update({ profile: { ...session.profile, phone: event.target.value } })} /></label></div>
     <div className="total"><span>К оплате</span><b>{total ? `${total} ₽` : 'уточняется'}</b></div>

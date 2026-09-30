@@ -198,6 +198,8 @@ await flow.getByRole('heading', { name: 'Заказ пока недоступе�
 if (await flow.getByRole('button', { name: 'Меню' }).isEnabled()) errors.push('Cream: неподтверждённое меню доступно из навигации')
 await flow.goto(new URL('#/brand/cream/menu', base).href)
 await flow.getByRole('heading', { name: 'Заказ пока недоступен' }).waitFor()
+await flow.goto(new URL('#/', base).href)
+await flow.getByText('Адрес и заказ пока не подтверждены').waitFor()
 report.scenarios.push({ name: 'Cream не открывает неподтверждённый заказ', status: 'passed' })
 
 await flow.goto(new URL('case/', base).href)
