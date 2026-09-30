@@ -204,6 +204,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .cart-brand { display: flex; align-items: center; gap: 10px; padding: 12px 0 18px; border-bottom: 1px solid var(--line); }
 .cart-item { display: grid; grid-template-columns: 58px 1fr auto; gap: 10px; align-items: center; padding: 18px 0; border-bottom: 1px solid var(--line); }
 .mini-art { width: 58px; height: 58px; border-radius: 14px; }
+.mini-art.photo { display: block; object-fit: cover; }
 .cart-item > span { min-width: 0; display: flex; flex-direction: column; }
 .cart-item b { font-size: 11px; }
 .cart-item small { font-size: 9px; color: #777168; margin: 4px 0; }

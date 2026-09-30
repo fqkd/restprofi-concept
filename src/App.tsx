@@ -242,6 +242,11 @@ function DishArt({ item, large = false }: { item: { id: string; title: string; a
   return <span className={`${large ? 'product-art' : 'dish-art'} ${item.art}`} aria-hidden="true"><span className="food-plate">{icon}</span></span>
 }
 
+function MiniDishArt({ item }: { item: { id: string; art: string } }) {
+  if (item.id === 'showcase') return <span className={`mini-art ${item.art}`} aria-hidden="true"><IceCreamBowl /></span>
+  return <img className="mini-art photo" src={`${import.meta.env.BASE_URL}dishes/${item.id}.webp`} alt="" loading="lazy" />
+}
+
 function HomeScreen({ go, session, update }: { go: Go; session: Session; update: (p: Partial<Session>) => void }) {
   const pick = (id: BrandId) => { update({ brand: id }); go(`/brand/${id}`) }
   return <div className="screen home-screen">
@@ -379,7 +384,7 @@ function CartScreen({ go, session, update }: { go: Go; session: Session; update:
     <div className="cart-brand"><BrandMark id={session.brand} small /><span><b>{brands[session.brand].name}</b><small>Отдельный заказ бренда</small></span></div>
     {count === 0 ? <div className="empty"><ShoppingBag /><h1>Корзина пока пуста</h1><p>Выберите позиции в меню этого бренда.</p><button className="cta" onClick={() => go(`/brand/${session.brand}/menu`)}>Перейти в меню</button></div> : <>
       {lines.map(({ item, count: quantity }) => <article className="cart-item" key={item.id}>
-        <div className={`mini-art ${item.art}`} />
+        <MiniDishArt item={item} />
         <span><b>{item.title}</b><small>Стандартная подача</small><em>{item.price ? `${item.price} ₽` : 'Цена уточняется'}</em></span>
         <div className="counter small"><button aria-label={`Уменьшить ${item.title}`} onClick={() => change(item.id, quantity - 1)}><Minus /></button><b>{quantity}</b><button aria-label={`Увеличить ${item.title}`} onClick={() => change(item.id, quantity + 1)}><Plus /></button></div>
       </article>)}
@@ -429,7 +434,7 @@ function CheckoutScreen({ go, session, update, loading, setLoading }: { go: Go; 
     <div className="checkout-block"><span><Clock3 /><b>{time}</b></span><small>Интервал подтвердит оператор</small><button onClick={() => setEditing('time')}>Выбрать</button></div>
     <div className="checkout-block"><span><CreditCard /><b>{card}</b></span><small>Выберите удобный способ</small><button onClick={() => setEditing('payment')}>Выбрать</button></div>
     {editing && <div className="choice-sheet" role="dialog" aria-label={editing === 'time' ? 'Выбор времени' : 'Выбор оплаты'}><div><b>{editing === 'time' ? 'Когда получить заказ' : 'Способ оплаты'}</b><button aria-label="Закрыть" onClick={() => setEditing(null)}>×</button></div>{(editing === 'time' ? ['Ближайшее время', ...intervalOptions] : ['Банковская карта', 'При получении']).map((value) => <button className={(editing === 'time' ? time : card) === value ? 'active' : ''} key={value} onClick={() => { if (editing === 'time') setTime(value); else setCard(value); setEditing(null) }}>{value}<Check /></button>)}</div>}
-    <h2>Состав заказа</h2>{lines.map(({ item, count }) => <div className="checkout-order" key={item.id}><div className={`mini-art ${item.art}`} /><span><b>{item.title}</b><small>{count} × {item.price ? `${item.price} ₽` : 'цена уточняется'}</small></span><strong>{item.price ? `${item.price * count} ₽` : 'уточняется'}</strong></div>)}
+    <h2>Состав заказа</h2>{lines.map(({ item, count }) => <div className="checkout-order" key={item.id}><MiniDishArt item={item} /><span><b>{item.title}</b><small>{count} × {item.price ? `${item.price} ₽` : 'цена уточняется'}</small></span><strong>{item.price ? `${item.price * count} ₽` : 'уточняется'}</strong></div>)}
     <h2>Контакты</h2><div className="contact-fields"><label><span>Имя</span><input value={session.profile.name} onChange={(event) => update({ profile: { ...session.profile, name: event.target.value } })} /></label><label><span>Телефон</span><input inputMode="tel" value={session.profile.phone} onChange={(event) => update({ profile: { ...session.profile, phone: event.target.value } })} /></label></div>
     <div className="total"><span>К оплате</span><b>{total ? `${total} ₽` : 'уточняется'}</b></div>
     <button className="cta" disabled={loading || !validContacts || !validTime} onClick={pay}>{loading ? <><span className="spinner" /> Проверяем…</> : <>Подтвердить заказ <ArrowRight /></>}</button>
@@ -545,7 +550,7 @@ function OffersScreen({ go }: { go: Go }) {
 function SearchScreen({ go, session }: { go: Go; session: Session }) {
   const [query, setQuery] = useState('')
   const results = query.trim() ? dishes[session.brand].filter((item) => `${item.title} ${item.meta}`.toLocaleLowerCase('ru').includes(query.trim().toLocaleLowerCase('ru'))) : []
-  return <div className="screen search-screen"><ScreenHeader title="Поиск" go={go} back={`/brand/${session.brand}/menu`} /><label className="search-box"><Search /><input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Блюдо или категория" /></label>{query.trim() ? (results.length ? <div className="search-results">{results.map((item) => <div className="search-result" key={item.id}><div className={`mini-art ${item.art}`} /><span><b>{item.title}</b><small>{brands[session.brand].name} · {item.price ? `${item.price} ₽` : 'цена уточняется'}</small></span><button aria-label={`Открыть ${item.title}`} onClick={() => go(`/product/${item.id}`)}><ArrowRight /></button></div>)}</div> : <div className="empty"><Search /><h1>Ничего не нашлось</h1><p>Попробуйте другое название внутри {brands[session.brand].name}.</p></div>) : <div className="empty"><Search /><h1>Что найти?</h1><p>Поиск работает внутри {brands[session.brand].name} и не смешивает меню.</p></div>}</div>
+  return <div className="screen search-screen"><ScreenHeader title="Поиск" go={go} back={`/brand/${session.brand}/menu`} /><label className="search-box"><Search /><input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Блюдо или категория" /></label>{query.trim() ? (results.length ? <div className="search-results">{results.map((item) => <div className="search-result" key={item.id}><MiniDishArt item={item} /><span><b>{item.title}</b><small>{brands[session.brand].name} · {item.price ? `${item.price} ₽` : 'цена уточняется'}</small></span><button aria-label={`Открыть ${item.title}`} onClick={() => go(`/product/${item.id}`)}><ArrowRight /></button></div>)}</div> : <div className="empty"><Search /><h1>Ничего не нашлось</h1><p>Попробуйте другое название внутри {brands[session.brand].name}.</p></div>) : <div className="empty"><Search /><h1>Что найти?</h1><p>Поиск работает внутри {brands[session.brand].name} и не смешивает меню.</p></div>}</div>
 }
 
 function NotFound({ go }: { go: Go }) {
