@@ -94,14 +94,34 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .loyalty-strip span svg { width: 18px; color: var(--lime); }
 
 .brand-screen { background: #ece8df; }
-.brand-hero { padding: 28px 4px 34px; border-bottom: 1px solid var(--line); }
-.brand-hero p { margin: 26px 0 5px; color: #777168; font-size: 11px; }
-.brand-hero h1 { font-size: 40px; margin: 0 0 14px; }
-.brand-hero > span:last-child { display: block; max-width: 340px; color: #6d685f; font-size: 12px; line-height: 1.55; }
-.brand-actions { display: grid; gap: 10px; margin-top: 22px; }
+.brand-screen.tone-amber { background: #f5eddd; }
+.brand-screen.tone-tomato { background: #f8e8e0; }
+.brand-screen.tone-berry { background: #f1e8ed; }
+.brand-screen.tone-cream { background: #f6f0df; }
+.brand-hero { padding: 0 0 20px; border-bottom: 1px solid var(--line); }
+.brand-visual { height: 192px; border-radius: 23px; position: relative; overflow: hidden; background: #e3dccd; }
+.brand-visual img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.tone-amber .brand-visual img { object-position: center 52%; }
+.tone-tomato .brand-visual img { object-position: center 47%; }
+.tone-berry .brand-visual img { object-position: center 58%; }
+.brand-visual-mark { position: absolute; left: 13px; bottom: 13px; border: 3px solid white; border-radius: 21px; box-shadow: 0 8px 25px rgba(0,0,0,.18); }
+.brand-visual-mark .brand-mark { width: 48px; height: 48px; border-radius: 17px; }
+.cream-visual { height: 100%; display: grid; place-items: center; background: radial-gradient(circle at 48% 55%, #f4dbb4 0 22%, transparent 23%), radial-gradient(circle at 72% 22%, #b79272 0 7%, transparent 8%), #d9c6a7; }
+.cream-visual svg { width: 86px; height: 86px; stroke-width: 1.1; color: #7b5a40; }
+.brand-hero p { margin: 20px 0 6px; color: #777168; font-size: 11px; font-weight: 700; }
+.brand-hero h1 { font-size: 33px; margin: 0 0 10px; }
+.tone-tomato .brand-hero h1 { color: #932e25; }
+.tone-berry .brand-hero h1 { color: #68344f; }
+.tone-cream .brand-hero h1 { color: #67482e; }
+.brand-hero > span:last-child { display: block; max-width: 340px; color: #605b54; font-size: 12px; line-height: 1.55; }
+.brand-actions { display: grid; gap: 10px; margin-top: 17px; }
 .brand-actions > button { display: grid; grid-template-columns: 36px 1fr 24px; align-items: center; gap: 10px; text-align: left; background: rgba(255,255,255,.7); padding: 15px !important; border-radius: 18px; border: 1px solid var(--line); }
 .brand-actions > button > svg:first-child { width: 20px; }
 .brand-actions .primary-action { background: var(--ink); color: white; border-color: var(--ink); min-height: 84px; }
+.tone-amber .brand-actions .primary-action { background: #553b1d; border-color: #553b1d; }
+.tone-tomato .brand-actions .primary-action { background: #9c3128; border-color: #9c3128; }
+.tone-berry .brand-actions .primary-action { background: #68344f; border-color: #68344f; }
+.tone-cream .brand-actions .primary-action { background: #67482e; border-color: #67482e; }
 .brand-actions .primary-action small { color: #aaa69e; }
 .switch-brand { width: 100%; padding: 18px !important; margin-top: 12px; color: #655f57 !important; font-weight: 700; }
 

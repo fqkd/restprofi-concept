@@ -37,7 +37,7 @@ if (!remoteBase) {
   await waitForServer(base)
 }
 const prototypeRoutes = [
-  '#/', '#/order', '#/brand/pitcofe/format', '#/brand/mamadonna/menu', '#/product/gnocchi', '#/product/burrata', '#/product/onyx',
+  '#/', '#/order', '#/brand/pitcofe', '#/brand/mamadonna', '#/brand/esttort', '#/brand/cream', '#/brand/pitcofe/format', '#/brand/mamadonna/menu', '#/product/gnocchi', '#/product/burrata', '#/product/onyx',
   '#/cart/pitcofe', '#/checkout/pitcofe', '#/payment-error', '#/booking',
   '#/booking/success', '#/cake', '#/cake/success', '#/repeat', '#/loyalty',
   '#/offers', '#/history', '#/search',

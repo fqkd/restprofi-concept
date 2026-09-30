@@ -53,10 +53,10 @@ const brands: Record<BrandId, { name: string; note: string; tone: string }> = {
 }
 
 const brandExperience: Record<BrandId, { eyebrow: string; title: string; description: string }> = {
-  pitcofe: { eyebrow: 'Кофейня рядом', title: 'Кофе и кухня\nв удобном формате', description: 'Выберите доставку или навынос, затем соберите заказ из меню выбранной точки.' },
-  mamadonna: { eyebrow: 'Гастрокафе', title: 'Итальянский ритм\nдля встречи или ужина', description: 'Откройте меню, выберите формат заказа или подготовьте запрос на столик.' },
-  esttort: { eyebrow: 'Кондитерский дом', title: 'Торт, собранный\nпод ваш повод', description: 'Выберите категорию, начинку, вес и желаемую дату — детали подтвердит кондитер.' },
-  cream: { eyebrow: 'Кондитерская', title: 'Десертная витрина\nбез лишних обещаний', description: 'Посмотрите концепцию витрины. Актуальный адрес и наличие требуют подтверждения.' },
+  pitcofe: { eyebrow: 'Питькофе · кофейня', title: 'Завтрак, обед\nи кофе с собой', description: 'Выберите доставку или самовывоз. Меню откроется для выбранного формата.' },
+  mamadonna: { eyebrow: 'MamaDonna · гастрокафе', title: 'Повод встретиться\nза столом', description: 'Забронируйте столик или выберите блюда для заказа.' },
+  esttort: { eyebrow: 'ЕстьТорт · кондитерская', title: 'Торт к вашему\nпразднику', description: 'Выберите начинку, вес и дату. Кондитер подтвердит детали заказа.' },
+  cream: { eyebrow: 'Cream · кондитерская', title: 'Десерты, которые\nхочется увидеть', description: 'Адрес точки и ассортимент витрины пока не подтверждены.' },
 }
 
 const dishes: Record<BrandId, Array<{ id: string; title: string; meta: string; price: number; art: string }>> = {
@@ -272,14 +272,22 @@ function OrderBrandScreen({ go, update }: { go: Go; update: (p: Partial<Session>
 function BrandScreen({ go, session }: { go: Go; session: Session }) {
   const brand = brands[session.brand]
   const experience = brandExperience[session.brand]
+  const heroImage: Partial<Record<BrandId, string>> = {
+    pitcofe: 'gnocchi',
+    mamadonna: 'burrata',
+    esttort: 'onyx',
+  }
   return <div className={`screen brand-screen tone-${brand.tone}`}>
     <ScreenHeader title={brand.name} go={go} />
-    <section className="brand-hero"><BrandMark id={session.brand} /><p>{experience.eyebrow}</p><h1>{experience.title.split('\n').map((line, index) => <span key={line}>{index > 0 && <br />}{line}</span>)}</h1><span>{experience.description}</span></section>
+    <section className="brand-hero">
+      <div className="brand-visual">{heroImage[session.brand] ? <img src={`${import.meta.env.BASE_URL}dishes/${heroImage[session.brand]}.webp`} alt={session.brand === 'pitcofe' ? 'Ньокки в Питькофе' : session.brand === 'mamadonna' ? 'Буррата в MamaDonna' : 'Торт «Оникс» в ЕстьТорт'} /> : <div className="cream-visual" aria-hidden="true"><IceCreamBowl /></div>}<div className="brand-visual-mark"><BrandMark id={session.brand} /></div></div>
+      <p>{experience.eyebrow}</p><h1>{experience.title.split('\n').map((line, index) => <span key={line}>{index > 0 && <br />}{line}</span>)}</h1><span>{experience.description}</span>
+    </section>
     <div className="brand-actions">
-      {session.brand !== 'cream' && <button className="primary-action" onClick={() => go(session.brand === 'esttort' ? '/cake' : `/brand/${session.brand}/format`)}><ShoppingBag /><span><b>{session.brand === 'esttort' ? 'Собрать заявку на торт' : 'Доставка или самовывоз'}</b><small>{session.brand === 'esttort' ? 'категория, начинка, вес и дата' : 'сначала выберите формат'}</small></span><ArrowRight /></button>}
-      {session.brand === 'mamadonna' && <button onClick={() => go('/booking')}><CalendarDays /><span><b>Запросить столик</b><small>дата, время и число гостей; требуется подтверждение</small></span><ChevronRight /></button>}
-      {session.brand === 'cream' && <button className="primary-action" onClick={() => go(`/brand/${session.brand}/format`)}><MapPin /><span><b>Проверить адрес</b><small>не показываем неподтверждённую точку</small></span><ArrowRight /></button>}
-      <button onClick={() => go('/offers')}><Sparkles /><span><b>Идеи для следующего визита</b><small>отдельные сценарии без смешивания корзин</small></span><ChevronRight /></button>
+      {session.brand === 'pitcofe' && <><button className="primary-action" onClick={() => go('/brand/pitcofe/format')}><ShoppingBag /><span><b>Заказать еду</b><small>доставка или самовывоз</small></span><ArrowRight /></button><button onClick={() => go('/booking')}><CalendarDays /><span><b>Забронировать столик</b><small>дата, время и число гостей</small></span><ChevronRight /></button></>}
+      {session.brand === 'mamadonna' && <><button className="primary-action" onClick={() => go('/booking')}><CalendarDays /><span><b>Забронировать столик</b><small>отправить запрос на выбранное время</small></span><ArrowRight /></button><button onClick={() => go('/brand/mamadonna/format')}><ShoppingBag /><span><b>Заказать блюда</b><small>доставка или самовывоз</small></span><ChevronRight /></button></>}
+      {session.brand === 'esttort' && <><button className="primary-action" onClick={() => go('/cake')}><CakeSlice /><span><b>Подобрать торт</b><small>начинка, вес и желаемая дата</small></span><ArrowRight /></button><button onClick={() => go('/brand/esttort/format')}><ShoppingBag /><span><b>Смотреть готовые десерты</b><small>по доступности выбранной точки</small></span><ChevronRight /></button></>}
+      {session.brand === 'cream' && <button className="primary-action" onClick={() => go('/brand/cream/format')}><MapPin /><span><b>Адрес и ассортимент</b><small>покажем только подтверждённые сведения</small></span><ArrowRight /></button>}
     </div>
     <button className="switch-brand" onClick={() => go('/')}>Сменить бренд</button>
   </div>
