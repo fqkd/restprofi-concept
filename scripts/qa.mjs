@@ -37,7 +37,7 @@ if (!remoteBase) {
   await waitForServer(base)
 }
 const prototypeRoutes = [
-  '#/', '#/order', '#/brand/pitcofe', '#/brand/mamadonna', '#/brand/esttort', '#/brand/cream', '#/brand/pitcofe/format', '#/brand/mamadonna/menu', '#/product/gnocchi', '#/product/burrata', '#/product/onyx',
+  '#/', '#/order', '#/brand/pitcofe', '#/brand/mamadonna', '#/brand/esttort', '#/brand/cream', '#/brand/cream/format', '#/brand/cream/menu', '#/brand/pitcofe/format', '#/brand/mamadonna/menu', '#/product/gnocchi', '#/product/burrata', '#/product/onyx',
   '#/cart/pitcofe', '#/checkout/pitcofe', '#/payment-error', '#/booking',
   '#/booking/success', '#/cake', '#/cake/success', '#/repeat', '#/loyalty',
   '#/offers', '#/history', '#/search',
@@ -191,6 +191,14 @@ await flow.getByLabel('Телефон').fill('+7 900 123-45-67')
 await flow.locator('.checkout-order').first().waitFor()
 if (await flow.locator('.checkout-order').count() !== 1) errors.push('checkout: cart lines do not match the order')
 report.scenarios.push({ name: 'два блюда → удаление одного → оформление', status: 'passed' })
+
+await flow.goto(new URL('#/brand/cream', base).href)
+await flow.getByRole('button', { name: /Что известно о Cream/ }).click()
+await flow.getByRole('heading', { name: 'Заказ пока недоступен' }).waitFor()
+if (await flow.getByRole('button', { name: 'Меню' }).isEnabled()) errors.push('Cream: неподтверждённое меню доступно из навигации')
+await flow.goto(new URL('#/brand/cream/menu', base).href)
+await flow.getByRole('heading', { name: 'Заказ пока недоступен' }).waitFor()
+report.scenarios.push({ name: 'Cream не открывает неподтверждённый заказ', status: 'passed' })
 
 await flow.goto(new URL('case/', base).href)
 const caseUrl = flow.url()

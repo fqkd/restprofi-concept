@@ -377,6 +377,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .bottom-nav { position: relative; z-index: 10; display: grid; grid-template-columns: repeat(4, 1fr); align-items: center; background: rgba(250,248,243,.95); border-top: 1px solid rgba(25,24,22,.09); padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); backdrop-filter: blur(16px); }
 .bottom-nav button { border: 0; background: none; display: grid; justify-items: center; gap: 3px; color: #8a857d; font: inherit; cursor: pointer; }
 .bottom-nav button.active { color: var(--ink); }
+.bottom-nav button:disabled { opacity: .35; cursor: not-allowed; }
 .bottom-nav svg { width: 20px; height: 20px; }
 .bottom-nav span { font-size: 8px; font-weight: 700; }
 .bottom-nav .icon-wrap { position: relative; }

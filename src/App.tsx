@@ -56,7 +56,7 @@ const brandExperience: Record<BrandId, { eyebrow: string; title: string; descrip
   pitcofe: { eyebrow: 'Питькофе · кофейня', title: 'Завтрак, обед\nи кофе с собой', description: 'Выберите доставку или самовывоз. Меню откроется для выбранного формата.' },
   mamadonna: { eyebrow: 'MamaDonna · гастрокафе', title: 'Повод встретиться\nза столом', description: 'Забронируйте столик или выберите блюда для заказа.' },
   esttort: { eyebrow: 'ЕстьТорт · кондитерская', title: 'Торт к вашему\nпразднику', description: 'Выберите начинку, вес и дату. Кондитер подтвердит детали заказа.' },
-  cream: { eyebrow: 'Cream · кондитерская', title: 'Десерты, которые\nхочется увидеть', description: 'Адрес точки и ассортимент витрины пока не подтверждены.' },
+  cream: { eyebrow: 'Cream · кондитерская', title: 'Витрина\nдесертов', description: 'Адрес точки и ассортимент витрины пока не подтверждены.' },
 }
 
 const dishes: Record<BrandId, Array<{ id: string; title: string; meta: string; price: number; art: string }>> = {
@@ -194,6 +194,7 @@ export function App() {
     if (route === '/repeat') return <RepeatScreen go={go} session={session} update={update} />
     if (route === '/payment-error') return <PaymentError go={go} session={session} />
     if (route === '/order/success') return <OrderSuccess go={go} session={session} />
+    if (session.brand === 'cream' && (route === '/brand/cream/format' || route === '/brand/cream/menu' || route.startsWith('/cart/cream') || route.startsWith('/checkout/cream') || route === '/product/showcase')) return <CreamInfoScreen go={go} />
     if (route.startsWith('/brand/') && route.endsWith('/format')) return <FormatScreen go={go} session={session} update={update} />
     if (route.startsWith('/brand/') && route.endsWith('/menu')) return <MenuScreen go={go} session={session} update={update} />
     if (route.startsWith('/brand/')) return <BrandScreen go={go} session={session} />
@@ -287,10 +288,14 @@ function BrandScreen({ go, session }: { go: Go; session: Session }) {
       {session.brand === 'pitcofe' && <><button className="primary-action" onClick={() => go('/brand/pitcofe/format')}><ShoppingBag /><span><b>Заказать еду</b><small>доставка или самовывоз</small></span><ArrowRight /></button><button onClick={() => go('/booking')}><CalendarDays /><span><b>Забронировать столик</b><small>дата, время и число гостей</small></span><ChevronRight /></button></>}
       {session.brand === 'mamadonna' && <><button className="primary-action" onClick={() => go('/booking')}><CalendarDays /><span><b>Забронировать столик</b><small>отправить запрос на выбранное время</small></span><ArrowRight /></button><button onClick={() => go('/brand/mamadonna/format')}><ShoppingBag /><span><b>Заказать блюда</b><small>доставка или самовывоз</small></span><ChevronRight /></button></>}
       {session.brand === 'esttort' && <><button className="primary-action" onClick={() => go('/cake')}><CakeSlice /><span><b>Подобрать торт</b><small>начинка, вес и желаемая дата</small></span><ArrowRight /></button><button onClick={() => go('/brand/esttort/format')}><ShoppingBag /><span><b>Смотреть готовые десерты</b><small>по доступности выбранной точки</small></span><ChevronRight /></button></>}
-      {session.brand === 'cream' && <button className="primary-action" onClick={() => go('/brand/cream/format')}><MapPin /><span><b>Адрес и ассортимент</b><small>покажем только подтверждённые сведения</small></span><ArrowRight /></button>}
+      {session.brand === 'cream' && <button className="primary-action" onClick={() => go('/brand/cream/format')}><MapPin /><span><b>Что известно о Cream</b><small>адрес, меню и доступность</small></span><ArrowRight /></button>}
     </div>
     <button className="switch-brand" onClick={() => go('/')}>Сменить бренд</button>
   </div>
+}
+
+function CreamInfoScreen({ go }: { go: Go }) {
+  return <div className="screen cream-info-screen"><ScreenHeader title="Cream" go={go} back="/brand/cream" /><div className="empty"><IceCreamBowl /><h1>Заказ пока недоступен</h1><p>Мы не нашли подтверждённые адрес точки, меню и условия заказа. Поэтому здесь нет вымышленного каталога или оформления.</p></div><button className="cta" onClick={() => go('/')}>Выбрать другой бренд <ArrowRight /></button></div>
 }
 
 function FormatScreen({ go, session, update }: { go: Go; session: Session; update: (p: Partial<Session>) => void }) {
@@ -548,5 +553,5 @@ function NotFound({ go }: { go: Go }) {
 }
 
 function BottomNav({ route, go, cartCount, brand }: { route: string; go: Go; cartCount: number; brand: BrandId }) {
-  return <nav className="bottom-nav" aria-label="Основная навигация"><button className={route === '/' ? 'active' : ''} onClick={() => go('/')}><Home /><span>Главная</span></button><button className={route.includes('/menu') ? 'active' : ''} onClick={() => go(`/brand/${brand}/menu`)}><Coffee /><span>Меню</span></button><button className={route.includes('/cart') ? 'active' : ''} onClick={() => go(`/cart/${brand}`)}><span className="icon-wrap"><ShoppingBag />{cartCount > 0 && <i>{cartCount}</i>}</span><span>Корзина</span></button><button className={route === '/history' ? 'active' : ''} onClick={() => go('/history')}><History /><span>История</span></button></nav>
+  return <nav className="bottom-nav" aria-label="Основная навигация"><button className={route === '/' ? 'active' : ''} onClick={() => go('/')}><Home /><span>Главная</span></button><button disabled={brand === 'cream'} className={route.includes('/menu') ? 'active' : ''} onClick={() => go(`/brand/${brand}/menu`)}><Coffee /><span>Меню</span></button><button disabled={brand === 'cream'} className={route.includes('/cart') ? 'active' : ''} onClick={() => go(`/cart/${brand}`)}><span className="icon-wrap"><ShoppingBag />{cartCount > 0 && <i>{cartCount}</i>}</span><span>Корзина</span></button><button className={route === '/history' ? 'active' : ''} onClick={() => go('/history')}><History /><span>История</span></button></nav>
 }
