@@ -72,7 +72,19 @@
 
 ## Визуальные материалы
 
-Внешние фотографии и логотипы в репозиторий не копировались. Интерфейс использует собственные геометрические иллюстрации и системные иконки `lucide-react`. Названия отдельных блюд и ориентировочные цены взяты с официальных меню на дату проверки; публичная версия отдельно предупреждает, что ассортимент и цены могут измениться.
+30 сентября 2026 года для девяти позиций меню сохранены и локально оптимизированы фотографии самих блюд с официальных сайтов брендов. Изображения не загружаются горячими ссылками. Для Cream, где подтверждённый ассортимент не найден, остаётся собственная иллюстрация витрины. Названия и ориентировочные цены взяты с официальных меню на дату проверки; актуальность ассортимента и цены требуют подтверждения перед реальным заказом.
+
+Источники фотографий:
+- `gnocchi` — Ньокки с говяжьими щёчками: https://pitcofe.ru/assets/images/menu_dishs/alpha-scale/4544.png
+- `carbonara` — Карбонара: https://pitcofe.ru/assets/images/menu_dishs/alpha-scale/928.png
+- `borsch` — Борщ с говядиной: https://pitcofe.ru/assets/images/menu_dishs/alpha-scale/920.png
+- `burrata` — Буррата с томатами: https://mamadonna.ru/upload/iblock/152/00xnyaon6q3xmtfdi47ik2m0tbxdayz2/10292.jpg
+- `omelette` — Омлет с креветками и авокадо: https://mamadonna.ru/upload/iblock/691/vc92628jjv599iki9qhyhw06hgn8t1jo/10279.jpg
+- `napoleon` — Наполеон: https://mamadonna.ru/upload/iblock/1ae/dcgrgw3yfyhbjr08q5n9otn372pd0iqh/10297.jpg
+- `sebastian` — Чизкейк жженый "Сан-Себастьян": https://esttort.ru/upload/iblock/e03/2drnijynbtsmd6ei0xc5olecwkbuu4i0.jpg
+- `onyx` — Оникс: https://esttort.ru/upload/iblock/dcb/dcbaa41b6ee3d3b6a1c54eca054474f4.jpg
+- `bento` — Бенто торт 6: https://esttort.ru/upload/iblock/fda/fdab5194d58147067532503960c1a483.jpeg
+
 
 ## Требует внутренних данных
 

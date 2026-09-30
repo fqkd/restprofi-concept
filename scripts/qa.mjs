@@ -37,10 +37,15 @@ if (!remoteBase) {
   await waitForServer(base)
 }
 const prototypeRoutes = [
-  '#/', '#/order', '#/brand/pitcofe/format', '#/brand/mamadonna/menu', '#/product/gnocchi',
-  '#/cart/pitcofe', '#/checkout/pitcofe', '#/payment-error', '#/booking',
-  '#/booking/success', '#/cake', '#/cake/success', '#/repeat', '#/loyalty',
-  '#/offers', '#/history', '#/search',
+  '#/', '#/order', '#/brand/pitcofe', '#/brand/mamadonna', '#/brand/esttort', '#/brand/cream',
+  '#/brand/cream/format', '#/brand/cream/menu',
+  '#/brand/pitcofe/format', '#/brand/mamadonna/format', '#/brand/esttort/format',
+  '#/brand/pitcofe/menu', '#/brand/mamadonna/menu', '#/brand/esttort/menu',
+  '#/product/gnocchi', '#/product/carbonara', '#/product/borsch', '#/product/burrata', '#/product/omelette', '#/product/napoleon', '#/product/sebastian', '#/product/onyx', '#/product/bento',
+  '#/cart/pitcofe', '#/cart/mamadonna', '#/cart/esttort',
+  '#/checkout/pitcofe', '#/checkout/mamadonna', '#/checkout/esttort',
+  '#/payment-error', '#/booking', '#/booking/success', '#/cake', '#/cake/success',
+  '#/repeat', '#/loyalty', '#/offers', '#/profile', '#/history', '#/search',
 ]
 const prototypeSizes = [
   { width: 360, height: 800 },
@@ -49,6 +54,7 @@ const prototypeSizes = [
   { width: 1440, height: 1000 },
 ]
 const caseSizes = [
+  { width: 768, height: 900 },
   { width: 1366, height: 768 },
   { width: 1440, height: 900 },
   { width: 1920, height: 1080 },
@@ -84,6 +90,17 @@ async function inspect(route, size) {
   }))
   if (state.overflow) errors.push(`${size.width}px overflow: ${route}`)
   if (state.rootEmpty) errors.push(`${size.width}px empty root: ${route}`)
+  if (route.startsWith('#/product/')) {
+    const expected = { gnocchi: 'Ньокки с говяжьими щёчками', carbonara: 'Карбонара', borsch: 'Борщ с говядиной', burrata: 'Буррата с томатами', omelette: 'Омлет с креветками и авокадо', napoleon: 'Наполеон', sebastian: 'Чизкейк «Сан-Себастьян»', onyx: 'Торт «Оникс»', bento: 'Бенто-торт' }[route.split('/').pop()]
+    if (!await page.getByRole('heading', { name: expected }).count()) errors.push(`${size.width}px wrong product on deep link: ${route}`)
+    const art = await page.locator('.product-art').boundingBox()
+    const minimumWidth = size.width <= 430 ? size.width - 1 : 300
+    if (!art || art.width < minimumWidth || art.height < 250) {
+      errors.push(`${size.width}px product hero is missing or collapsed`)
+    }
+    const loaded = await page.locator('.product-art').evaluate((element) => element instanceof HTMLImageElement && element.complete && element.naturalWidth > 0)
+    if (!loaded) errors.push(`${size.width}px product photo did not load: ${route}`)
+  }
   await page.screenshot({ path: screenshotName(route, size), fullPage: true })
   report.pages.push({ route, ...size, status: response?.status(), ...state })
   await page.close()
@@ -103,6 +120,11 @@ flow.on('pageerror', (error) => errors.push(`flow pageerror: ${error.message}`))
 await flow.goto(new URL('#/', base).href)
 await flow.evaluate(() => sessionStorage.clear())
 await flow.reload()
+await flow.goto(new URL('#/profile', base).href)
+await flow.getByLabel('Имя').fill('Алексей')
+await flow.getByLabel('Телефон').fill('+7 900 123-45-67')
+await flow.getByRole('button', { name: 'Сохранить контакты' }).click()
+await flow.goto(new URL('#/', base).href)
 await flow.getByRole('button', { name: /Заказать еду/ }).click()
 await flow.getByRole('button', { name: /Питькофе/ }).click()
 await flow.getByRole('button', { name: /Самовывоз/ }).click()
@@ -116,8 +138,13 @@ await flow.getByRole('button', { name: /Рядом со мной/ }).click()
 await flow.getByText('Расстояния рассчитаны от вашего положения').waitFor()
 await flow.getByRole('button', { name: /Смотреть доступное меню/ }).click()
 await flow.getByRole('button', { name: /Открыть Ньокки/ }).click()
+await flow.getByLabel('Пожелание к блюду').fill('Без лука')
 await flow.getByRole('button', { name: /Добавить ·/ }).click()
+await flow.getByText('Пожелание: Без лука').waitFor()
 await flow.getByRole('button', { name: /К оформлению/ }).click()
+await flow.getByText(/Без лука/).waitFor()
+if (await flow.getByLabel('Имя').inputValue() !== 'Алексей') errors.push('profile: saved name did not reach checkout')
+if (await flow.getByLabel('Телефон').inputValue() !== '+7 900 123-45-67') errors.push('profile: saved phone did not reach checkout')
 await flow.getByRole('button', { name: /Подтвердить заказ/ }).click()
 await flow.getByRole('heading', { name: 'Корзина на месте' }).waitFor()
 await flow.reload()
@@ -125,6 +152,16 @@ await flow.getByRole('button', { name: 'Вернуться к оплате' }).c
 await flow.getByRole('button', { name: /Подтвердить заказ/ }).click()
 await flow.getByRole('heading', { name: 'Заказ подтверждён' }).waitFor()
 report.scenarios.push({ name: 'заказ → ошибка оплаты → восстановление', status: 'passed' })
+
+await flow.getByRole('button', { name: 'История заказов' }).click()
+await flow.getByRole('heading', { name: 'Ваши заказы' }).waitFor()
+if (await flow.locator('.history-card').count() !== 1) errors.push('history: successful order was not recorded')
+await flow.getByRole('button', { name: /Повторить/ }).click()
+await flow.getByRole('button', { name: 'Проверить и повторить' }).click()
+await flow.getByRole('button', { name: 'Открыть корзину' }).click()
+await flow.getByText('Ньокки с говяжьими щёчками').waitFor()
+await flow.getByText('Пожелание: Без лука').waitFor()
+report.scenarios.push({ name: 'успешный заказ → история → повтор', status: 'passed' })
 
 await flow.goto(new URL('#/booking', base).href)
 await flow.getByRole('button', { name: /Питькофе/ }).click()
@@ -141,6 +178,46 @@ await flow.getByRole('button', { name: /Дата · изменить/ }).click()
 await flow.getByRole('button', { name: /Сохранить заявку/ }).click()
 await flow.getByText(/Детский · «Оникс»/).waitFor()
 report.scenarios.push({ name: 'торт → заявка', status: 'passed' })
+
+await flow.goto(new URL('#/loyalty', base).href)
+if (await flow.getByRole('link', { name: 'Страница приложения' }).getAttribute('href') !== 'https://apps.apple.com/ru/app/id1608159331') errors.push('loyalty: wrong Pitcofe link')
+await flow.getByRole('button', { name: 'MamaDonna' }).click()
+if (await flow.getByRole('link', { name: 'Условия программы' }).getAttribute('href') !== 'https://mamadonna.ru/bonuses/') errors.push('loyalty: wrong MamaDonna link')
+report.scenarios.push({ name: 'лояльность → выбор бренда → официальные условия', status: 'passed' })
+
+await flow.goto(new URL('#/brand/pitcofe/menu', base).href)
+await flow.getByRole('button', { name: 'Супы', exact: true }).click()
+await flow.getByText('Борщ с говядиной').waitFor()
+if (await flow.getByText('Карбонара').count()) errors.push('menu: soups include pasta')
+await flow.getByRole('button', { name: 'Все блюда' }).click()
+await flow.getByText('Карбонара').waitFor()
+await flow.evaluate(() => sessionStorage.clear())
+await flow.reload()
+await flow.getByRole('button', { name: 'Добавить Ньокки с говяжьими щёчками' }).click()
+await flow.getByRole('button', { name: 'Добавить Карбонара' }).click()
+await flow.goto(new URL('#/cart/pitcofe', base).href)
+if (await flow.locator('.cart-item').count() !== 2) errors.push('cart: adding a second dish replaced the first')
+if (await flow.locator('.cart-item img').count() !== 2 || !await flow.locator('.cart-item img').evaluateAll((images) => images.every((image) => image.complete && image.naturalWidth > 0))) errors.push('cart: dish photos missing')
+await flow.getByRole('button', { name: 'Уменьшить Ньокки с говяжьими щёчками' }).click()
+if (await flow.locator('.cart-item').count() !== 1) errors.push('cart: removing one dish changed the other')
+await flow.getByText('Карбонара').waitFor()
+await flow.getByRole('button', { name: /К оформлению/ }).click()
+await flow.getByLabel('Имя').fill('Алексей')
+await flow.getByLabel('Телефон').fill('+7 900 123-45-67')
+await flow.locator('.checkout-order').first().waitFor()
+if (await flow.locator('.checkout-order').count() !== 1) errors.push('checkout: cart lines do not match the order')
+if (!await flow.locator('.checkout-order img').first().evaluate((image) => image.complete && image.naturalWidth > 0)) errors.push('checkout: dish photo missing')
+report.scenarios.push({ name: 'два блюда → удаление одного → оформление', status: 'passed' })
+
+await flow.goto(new URL('#/brand/cream', base).href)
+await flow.getByRole('button', { name: /Что известно о Cream/ }).click()
+await flow.getByRole('heading', { name: 'Заказ пока недоступен' }).waitFor()
+if (await flow.getByRole('button', { name: 'Меню' }).isEnabled()) errors.push('Cream: неподтверждённое меню доступно из навигации')
+await flow.goto(new URL('#/brand/cream/menu', base).href)
+await flow.getByRole('heading', { name: 'Заказ пока недоступен' }).waitFor()
+await flow.goto(new URL('#/', base).href)
+await flow.getByText('Адрес и заказ пока не подтверждены').waitFor()
+report.scenarios.push({ name: 'Cream не открывает неподтверждённый заказ', status: 'passed' })
 
 await flow.goto(new URL('case/', base).href)
 const caseUrl = flow.url()
@@ -168,4 +245,4 @@ if (errors.length) {
   console.error(errors.join('\n'))
   process.exit(1)
 }
-console.log(`QA: ${prototypeRoutes.length} prototype routes × ${prototypeSizes.length} viewports; case at 1366x768, 1440x900 and 1920x1080; screenshots, order recovery, booking, cake and all case links passed`)
+console.log(`QA: ${prototypeRoutes.length} prototype routes × ${prototypeSizes.length} viewports; case at 768, 1366, 1440 and 1920px; screenshots, order recovery, booking, cake and all case links passed`)

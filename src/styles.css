@@ -15,7 +15,7 @@ html { min-width: 320px; background: #171714; }
 body { margin: 0; min-width: 320px; min-height: 100vh; }
 button, input { font: inherit; }
 button { color: inherit; }
-button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid #7c63ff; outline-offset: 3px; }
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid #7c63ff; outline-offset: 3px; }
 
 .app-stage { min-height: 100vh; display: grid; grid-template-columns: minmax(420px, 1fr) minmax(390px, 520px); gap: clamp(40px, 8vw, 140px); justify-content: center; align-items: center; padding: 48px max(48px, calc((100vw - 1420px) / 2)); background: radial-gradient(circle at 18% 20%, #343628 0, transparent 34%), #171714; overflow: hidden; }
 .desktop-story { color: #f6f2e9; max-width: 720px; position: relative; z-index: 1; }
@@ -94,14 +94,34 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .loyalty-strip span svg { width: 18px; color: var(--lime); }
 
 .brand-screen { background: #ece8df; }
-.brand-hero { padding: 28px 4px 34px; border-bottom: 1px solid var(--line); }
-.brand-hero p { margin: 26px 0 5px; color: #777168; font-size: 11px; }
-.brand-hero h1 { font-size: 40px; margin: 0 0 14px; }
-.brand-hero > span:last-child { display: block; max-width: 340px; color: #6d685f; font-size: 12px; line-height: 1.55; }
-.brand-actions { display: grid; gap: 10px; margin-top: 22px; }
+.brand-screen.tone-amber { background: #f5eddd; }
+.brand-screen.tone-tomato { background: #f8e8e0; }
+.brand-screen.tone-berry { background: #f1e8ed; }
+.brand-screen.tone-cream { background: #f6f0df; }
+.brand-hero { padding: 0 0 20px; border-bottom: 1px solid var(--line); }
+.brand-visual { height: 192px; border-radius: 23px; position: relative; overflow: hidden; background: #e3dccd; }
+.brand-visual img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.tone-amber .brand-visual img { object-position: center 52%; }
+.tone-tomato .brand-visual img { object-position: center 47%; }
+.tone-berry .brand-visual img { object-position: center 58%; }
+.brand-visual-mark { position: absolute; left: 13px; bottom: 13px; border: 3px solid white; border-radius: 21px; box-shadow: 0 8px 25px rgba(0,0,0,.18); }
+.brand-visual-mark .brand-mark { width: 48px; height: 48px; border-radius: 17px; }
+.cream-visual { height: 100%; display: grid; place-items: center; background: radial-gradient(circle at 48% 55%, #f4dbb4 0 22%, transparent 23%), radial-gradient(circle at 72% 22%, #b79272 0 7%, transparent 8%), #d9c6a7; }
+.cream-visual svg { width: 86px; height: 86px; stroke-width: 1.1; color: #7b5a40; }
+.brand-hero p { margin: 20px 0 6px; color: #777168; font-size: 11px; font-weight: 700; }
+.brand-hero h1 { font-size: 33px; margin: 0 0 10px; }
+.tone-tomato .brand-hero h1 { color: #932e25; }
+.tone-berry .brand-hero h1 { color: #68344f; }
+.tone-cream .brand-hero h1 { color: #67482e; }
+.brand-hero > span:last-child { display: block; max-width: 340px; color: #605b54; font-size: 12px; line-height: 1.55; }
+.brand-actions { display: grid; gap: 10px; margin-top: 17px; }
 .brand-actions > button { display: grid; grid-template-columns: 36px 1fr 24px; align-items: center; gap: 10px; text-align: left; background: rgba(255,255,255,.7); padding: 15px !important; border-radius: 18px; border: 1px solid var(--line); }
 .brand-actions > button > svg:first-child { width: 20px; }
 .brand-actions .primary-action { background: var(--ink); color: white; border-color: var(--ink); min-height: 84px; }
+.tone-amber .brand-actions .primary-action { background: #553b1d; border-color: #553b1d; }
+.tone-tomato .brand-actions .primary-action { background: #9c3128; border-color: #9c3128; }
+.tone-berry .brand-actions .primary-action { background: #68344f; border-color: #68344f; }
+.tone-cream .brand-actions .primary-action { background: #67482e; border-color: #67482e; }
 .brand-actions .primary-action small { color: #aaa69e; }
 .switch-brand { width: 100%; padding: 18px !important; margin-top: 12px; color: #655f57 !important; font-weight: 700; }
 
@@ -141,6 +161,8 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .dish-card { min-width: 0; display: grid; grid-template-columns: 108px 1fr; gap: 13px; padding: 10px; background: white; border-radius: 20px; border: 1px solid var(--line); }
 .dish-art-button { width: 108px; min-height: 116px; padding: 0 !important; border-radius: 14px !important; overflow: hidden; }
 .dish-art, .product-art { position: relative; overflow: hidden; background: #ddd; }
+.dish-art.photo { object-fit: cover; }
+.product-art.photo { object-fit: contain; }
 .dish-art { display: block; width: 100%; height: 100%; border-radius: 14px !important; min-height: 116px; }
 .dish-art::before, .product-art::before { content: ''; position: absolute; width: 85%; aspect-ratio: 1; border-radius: 50%; background: rgba(255,255,255,.4); left: 7%; top: 20%; box-shadow: inset 0 0 0 12px rgba(255,255,255,.18); }
 .dish-art .food-plate, .product-art > .food-plate { position: absolute; inset: 0; display: grid; place-items: center; }
@@ -164,9 +186,8 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .floating-cart span:last-child { justify-content: end; }
 .floating-cart svg { width: 16px; }
 
-.product-art { width: calc(100% + 40px); margin-left: -20px; height: 260px; margin-top: -25px; margin-bottom: 26px; }
+.product-art { display: block; width: calc(100% + 40px); margin-left: -20px; height: 260px; margin-top: -25px; margin-bottom: 26px; }
 .product-art > span { font-size: 100px; }
-.product-art i { position: absolute; bottom: 14px; left: 18px; font-size: 9px; font-style: normal; background: rgba(255,255,255,.75); padding: 6px 9px; border-radius: 999px; }
 .product-screen h1 { font-size: 32px; }
 .option { display: flex; align-items: center; justify-content: space-between; padding: 15px; background: white; border: 1px solid var(--line); border-radius: 17px; }
 .option span { display: flex; flex-direction: column; }
@@ -183,6 +204,10 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .cart-brand { display: flex; align-items: center; gap: 10px; padding: 12px 0 18px; border-bottom: 1px solid var(--line); }
 .cart-item { display: grid; grid-template-columns: 58px 1fr auto; gap: 10px; align-items: center; padding: 18px 0; border-bottom: 1px solid var(--line); }
 .mini-art { width: 58px; height: 58px; border-radius: 14px; }
+.mini-art.photo { display: block; object-fit: cover; }
+.product-note { display: grid; gap: 7px; margin: 20px 0 8px; font-size: 11px; font-weight: 700; }
+.product-note textarea { width: 100%; min-height: 74px; padding: 12px; border: 1px solid var(--line); border-radius: 13px; background: white; color: var(--ink); font: inherit; font-weight: 400; resize: vertical; }
+.product-note small { color: #777168; font-size: 10px; font-weight: 400; line-height: 1.45; }
 .cart-item > span { min-width: 0; display: flex; flex-direction: column; }
 .cart-item b { font-size: 11px; }
 .cart-item small { font-size: 9px; color: #777168; margin: 4px 0; }
@@ -331,13 +356,10 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .loyalty-card.tomato { background: #bd3e2d; }
 .loyalty-card > span { display: flex; align-items: center; justify-content: space-between; }
 .loyalty-card > span small { font-size: 9px; opacity: .75; }
-.qr-demo { width: 88px; height: 88px; display: grid; grid-template-columns: repeat(3,1fr); gap: 5px; padding: 7px; background: #fff; border-radius: 12px; align-self: end; }
-.qr-demo i { background: #201e1b; border-radius: 2px; }
-.qr-demo i:nth-child(2), .qr-demo i:nth-child(4), .qr-demo i:nth-child(8) { background: white; }
-.loyalty-card footer { display: flex; justify-content: space-between; align-items: end; }
-.loyalty-card footer span { display: flex; flex-direction: column; }
-.loyalty-card footer small { font-size: 9px; opacity: .65; }
-.loyalty-card footer b { font-size: 20px; }
+.loyalty-card h2 { margin: 0 0 8px; font-size: 23px; line-height: 1.1; }
+.loyalty-card p { max-width: 260px; margin: 0; font-size: 12px; line-height: 1.45; }
+.loyalty-card a { display: inline-flex; align-items: center; gap: 8px; width: fit-content; color: inherit; font-size: 12px; font-weight: 800; text-decoration: underline; text-underline-offset: 4px; }
+.loyalty-card a svg { width: 16px; }
 
 .offer-main { min-height: 225px; display: flex; flex-direction: column; align-items: flex-start; padding: 22px; border-radius: 24px; background: #f0b43f; margin: 23px 0 30px; position: relative; overflow: hidden; }
 .offer-main::after { content: '↻'; position: absolute; right: -12px; bottom: -53px; font-size: 180px; opacity: .12; font-weight: 800; }
@@ -359,6 +381,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .bottom-nav { position: relative; z-index: 10; display: grid; grid-template-columns: repeat(4, 1fr); align-items: center; background: rgba(250,248,243,.95); border-top: 1px solid rgba(25,24,22,.09); padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); backdrop-filter: blur(16px); }
 .bottom-nav button { border: 0; background: none; display: grid; justify-items: center; gap: 3px; color: #8a857d; font: inherit; cursor: pointer; }
 .bottom-nav button.active { color: var(--ink); }
+.bottom-nav button:disabled { opacity: .35; cursor: not-allowed; }
 .bottom-nav svg { width: 20px; height: 20px; }
 .bottom-nav span { font-size: 8px; font-weight: 700; }
 .bottom-nav .icon-wrap { position: relative; }
