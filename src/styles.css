@@ -141,6 +141,8 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .dish-card { min-width: 0; display: grid; grid-template-columns: 108px 1fr; gap: 13px; padding: 10px; background: white; border-radius: 20px; border: 1px solid var(--line); }
 .dish-art-button { width: 108px; min-height: 116px; padding: 0 !important; border-radius: 14px !important; overflow: hidden; }
 .dish-art, .product-art { position: relative; overflow: hidden; background: #ddd; }
+.dish-art.photo { object-fit: cover; }
+.product-art.photo { object-fit: contain; }
 .dish-art { display: block; width: 100%; height: 100%; border-radius: 14px !important; min-height: 116px; }
 .dish-art::before, .product-art::before { content: ''; position: absolute; width: 85%; aspect-ratio: 1; border-radius: 50%; background: rgba(255,255,255,.4); left: 7%; top: 20%; box-shadow: inset 0 0 0 12px rgba(255,255,255,.18); }
 .dish-art .food-plate, .product-art > .food-plate { position: absolute; inset: 0; display: grid; place-items: center; }

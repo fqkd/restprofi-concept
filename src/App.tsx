@@ -127,6 +127,10 @@ function currentRoute() {
 }
 
 function routeBrand(route: string): BrandId | null {
+  if (route.startsWith('/product/')) {
+    const productId = route.split('/')[2]
+    return (Object.keys(dishes) as BrandId[]).find((id) => dishes[id].some((item) => item.id === productId)) || null
+  }
   return (Object.keys(brands) as BrandId[]).find((id) => route.includes(`/${id}`)) || null
 }
 
@@ -228,7 +232,8 @@ function BrandMark({ id, small = false }: { id: BrandId; small?: boolean }) {
   return <span className={`brand-mark ${brand.tone} ${small ? 'small' : ''}`} aria-hidden="true">{glyph}</span>
 }
 
-function DishArt({ item, large = false }: { item: { title: string; art: string }; large?: boolean }) {
+function DishArt({ item, large = false }: { item: { id: string; title: string; art: string }; large?: boolean }) {
+  if (item.id !== 'showcase') return <img className={`${large ? 'product-art' : 'dish-art'} ${item.art} photo`} src={`${import.meta.env.BASE_URL}dishes/${item.id}.webp`} alt="" loading="lazy" />
   const icon = /торт|чизкейк|наполеон|бенто/i.test(item.title) ? <CakeSlice /> : /витрина/i.test(item.title) ? <IceCreamBowl /> : /омлет|буррата/i.test(item.title) ? <Sparkles /> : <UtensilsCrossed />
   return <span className={`${large ? 'product-art' : 'dish-art'} ${item.art}`} aria-hidden="true"><span className="food-plate">{icon}</span></span>
 }
@@ -328,8 +333,9 @@ function MenuScreen({ go, session, update }: { go: Go; session: Session; update:
 }
 
 function ProductScreen({ go, session, update, productId }: { go: Go; session: Session; update: (p: Partial<Session>) => void; productId: string }) {
-  const item = dishes[session.brand].find((entry) => entry.id === productId) || dishes[session.brand][0]
+  const item = dishes[session.brand].find((entry) => entry.id === productId)
   const [count, setCount] = useState(1)
+  if (!item) return <div className="screen product-screen"><ScreenHeader title="Блюдо" go={go} back={`/brand/${session.brand}/menu`} /><div className="empty"><UtensilsCrossed /><h1>Блюдо не найдено</h1><p>Откройте меню и выберите доступную позицию.</p><button className="cta" onClick={() => go(`/brand/${session.brand}/menu`)}>Открыть меню</button></div></div>
   const add = () => {
     update({
       cart: { ...session.cart, [session.brand]: addItem(session.cart[session.brand], item.id, count) },

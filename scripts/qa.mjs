@@ -37,7 +37,7 @@ if (!remoteBase) {
   await waitForServer(base)
 }
 const prototypeRoutes = [
-  '#/', '#/order', '#/brand/pitcofe/format', '#/brand/mamadonna/menu', '#/product/gnocchi',
+  '#/', '#/order', '#/brand/pitcofe/format', '#/brand/mamadonna/menu', '#/product/gnocchi', '#/product/burrata', '#/product/onyx',
   '#/cart/pitcofe', '#/checkout/pitcofe', '#/payment-error', '#/booking',
   '#/booking/success', '#/cake', '#/cake/success', '#/repeat', '#/loyalty',
   '#/offers', '#/history', '#/search',
@@ -84,12 +84,16 @@ async function inspect(route, size) {
   }))
   if (state.overflow) errors.push(`${size.width}px overflow: ${route}`)
   if (state.rootEmpty) errors.push(`${size.width}px empty root: ${route}`)
-  if (route === '#/product/gnocchi') {
+  if (route.startsWith('#/product/')) {
+    const expected = { gnocchi: 'Ньокки с говяжьими щёчками', burrata: 'Буррата с томатами', onyx: 'Торт «Оникс»' }[route.split('/').pop()]
+    if (!await page.getByRole('heading', { name: expected }).count()) errors.push(`${size.width}px wrong product on deep link: ${route}`)
     const art = await page.locator('.product-art').boundingBox()
     const minimumWidth = size.width <= 430 ? size.width - 1 : 300
     if (!art || art.width < minimumWidth || art.height < 250) {
       errors.push(`${size.width}px product hero is missing or collapsed`)
     }
+    const loaded = await page.locator('.product-art').evaluate((element) => element instanceof HTMLImageElement && element.complete && element.naturalWidth > 0)
+    if (!loaded) errors.push(`${size.width}px product photo did not load: ${route}`)
   }
   await page.screenshot({ path: screenshotName(route, size), fullPage: true })
   report.pages.push({ route, ...size, status: response?.status(), ...state })
