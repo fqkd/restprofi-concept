@@ -230,7 +230,7 @@ function BrandMark({ id, small = false }: { id: BrandId; small?: boolean }) {
 
 function DishArt({ item, large = false }: { item: { title: string; art: string }; large?: boolean }) {
   const icon = /торт|чизкейк|наполеон|бенто/i.test(item.title) ? <CakeSlice /> : /витрина/i.test(item.title) ? <IceCreamBowl /> : /омлет|буррата/i.test(item.title) ? <Sparkles /> : <UtensilsCrossed />
-  return <span className={`${large ? 'product-art' : 'dish-art'} ${item.art}`} aria-hidden="true"><span className="food-plate">{icon}</span>{large && <i>визуальная концепция подачи</i>}</span>
+  return <span className={`${large ? 'product-art' : 'dish-art'} ${item.art}`} aria-hidden="true"><span className="food-plate">{icon}</span></span>
 }
 
 function HomeScreen({ go, session, update }: { go: Go; session: Session; update: (p: Partial<Session>) => void }) {

@@ -84,6 +84,13 @@ async function inspect(route, size) {
   }))
   if (state.overflow) errors.push(`${size.width}px overflow: ${route}`)
   if (state.rootEmpty) errors.push(`${size.width}px empty root: ${route}`)
+  if (route === '#/product/gnocchi') {
+    const art = await page.locator('.product-art').boundingBox()
+    const minimumWidth = size.width <= 430 ? size.width - 1 : 300
+    if (!art || art.width < minimumWidth || art.height < 250) {
+      errors.push(`${size.width}px product hero is missing or collapsed`)
+    }
+  }
   await page.screenshot({ path: screenshotName(route, size), fullPage: true })
   report.pages.push({ route, ...size, status: response?.status(), ...state })
   await page.close()

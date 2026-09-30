@@ -164,9 +164,8 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid 
 .floating-cart span:last-child { justify-content: end; }
 .floating-cart svg { width: 16px; }
 
-.product-art { width: calc(100% + 40px); margin-left: -20px; height: 260px; margin-top: -25px; margin-bottom: 26px; }
+.product-art { display: block; width: calc(100% + 40px); margin-left: -20px; height: 260px; margin-top: -25px; margin-bottom: 26px; }
 .product-art > span { font-size: 100px; }
-.product-art i { position: absolute; bottom: 14px; left: 18px; font-size: 9px; font-style: normal; background: rgba(255,255,255,.75); padding: 6px 9px; border-radius: 999px; }
 .product-screen h1 { font-size: 32px; }
 .option { display: flex; align-items: center; justify-content: space-between; padding: 15px; background: white; border: 1px solid var(--line); border-radius: 17px; }
 .option span { display: flex; flex-direction: column; }
