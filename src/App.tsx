@@ -8,7 +8,7 @@ import {
 import { LocationMap } from './LocationMap'
 import { locationsByBrand } from './locations'
 import { bookingDateOptions, cakeDateOptions, isFutureBookingTime, upcomingOrderIntervals } from './lib/schedule'
-import { addItem, cartTotal, itemCount, setItemCount, type CartLines } from './lib/cart'
+import { addItem, cartTotal, itemCount, lineItemId, lineKey, lineNote, setItemCount, type CartLines } from './lib/cart'
 
 type BrandId = 'pitcofe' | 'mamadonna' | 'esttort' | 'cream'
 type Service = 'delivery' | 'pickup'
@@ -59,32 +59,35 @@ const brandExperience: Record<BrandId, { eyebrow: string; title: string; descrip
   cream: { eyebrow: 'Cream · кондитерская', title: 'Витрина\nдесертов', description: 'Адрес точки и ассортимент витрины пока не подтверждены.' },
 }
 
-const dishes: Record<BrandId, Array<{ id: string; title: string; meta: string; price: number; art: string }>> = {
+type DishCategory = 'main' | 'soup' | 'salad' | 'breakfast' | 'dessert' | 'cake'
+const categoryLabels: Record<DishCategory, string> = { main: 'Основное', soup: 'Супы', salad: 'Салаты', breakfast: 'Завтраки', dessert: 'Десерты', cake: 'Торты' }
+const dishes: Record<BrandId, Array<{ id: string; title: string; meta: string; price: number; art: string; category: DishCategory }>> = {
   pitcofe: [
-    { id: 'gnocchi', title: 'Ньокки с говяжьими щёчками', meta: 'Основное блюдо · 390 г', price: 649, art: 'art-sage' },
-    { id: 'carbonara', title: 'Карбонара', meta: 'Паста · 320 г', price: 529, art: 'art-sun' },
-    { id: 'borsch', title: 'Борщ с говядиной', meta: 'Суп · 350 г', price: 529, art: 'art-red' },
+    { id: 'gnocchi', title: 'Ньокки с говяжьими щёчками', meta: 'Основное блюдо · 390 г', price: 649, art: 'art-sage', category: 'main' },
+    { id: 'carbonara', title: 'Карбонара', meta: 'Паста · 320 г', price: 529, art: 'art-sun', category: 'main' },
+    { id: 'borsch', title: 'Борщ с говядиной', meta: 'Суп · 350 г', price: 529, art: 'art-red', category: 'soup' },
   ],
   mamadonna: [
-    { id: 'burrata', title: 'Буррата с томатами', meta: 'Салат · 250 г', price: 660, art: 'art-red' },
-    { id: 'omelette', title: 'Омлет с креветками и авокадо', meta: 'Завтрак · 315 г', price: 650, art: 'art-sage' },
-    { id: 'napoleon', title: 'Наполеон', meta: 'Десерт · 150 г', price: 320, art: 'art-sun' },
+    { id: 'burrata', title: 'Буррата с томатами', meta: 'Салат · 250 г', price: 660, art: 'art-red', category: 'salad' },
+    { id: 'omelette', title: 'Омлет с креветками и авокадо', meta: 'Завтрак · 315 г', price: 650, art: 'art-sage', category: 'breakfast' },
+    { id: 'napoleon', title: 'Наполеон', meta: 'Десерт · 150 г', price: 320, art: 'art-sun', category: 'dessert' },
   ],
   esttort: [
-    { id: 'sebastian', title: 'Чизкейк «Сан-Себастьян»', meta: 'от 1,6 кг', price: 2205, art: 'art-sun' },
-    { id: 'onyx', title: 'Торт «Оникс»', meta: 'от 1,4 кг', price: 2709, art: 'art-berry' },
-    { id: 'bento', title: 'Бенто-торт', meta: 'от 0,37 кг', price: 1365, art: 'art-pink' },
+    { id: 'sebastian', title: 'Чизкейк «Сан-Себастьян»', meta: 'от 1,6 кг', price: 2205, art: 'art-sun', category: 'cake' },
+    { id: 'onyx', title: 'Торт «Оникс»', meta: 'от 1,4 кг', price: 2709, art: 'art-berry', category: 'cake' },
+    { id: 'bento', title: 'Бенто-торт', meta: 'от 0,37 кг', price: 1365, art: 'art-pink', category: 'cake' },
   ],
   cream: [
-    { id: 'showcase', title: 'Витрина десертов', meta: 'ассортимент уточняется в точке', price: 0, art: 'art-cream' },
+    { id: 'showcase', title: 'Витрина десертов', meta: 'ассортимент уточняется в точке', price: 0, art: 'art-cream', category: 'dessert' },
   ],
 }
 
 const emptyCart = (): Record<BrandId, CartLines> => ({ pitcofe: {}, mamadonna: {}, esttort: {}, cream: {} })
 const prices = (brand: BrandId) => Object.fromEntries(dishes[brand].map((item) => [item.id, item.price]))
-const cartEntries = (session: Session, brand: BrandId) => dishes[brand]
-  .map((item) => ({ item, count: session.cart[brand][item.id] || 0 }))
-  .filter(({ count }) => count > 0)
+const cartEntries = (session: Session, brand: BrandId) => Object.entries(session.cart[brand])
+  .filter(([, count]) => count > 0)
+  .map(([key, count]) => ({ key, item: dishes[brand].find((dish) => dish.id === lineItemId(key)), note: lineNote(key), count }))
+  .filter((line): line is { key: string; item: (typeof dishes)[BrandId][number]; note: string; count: number } => Boolean(line.item))
 
 const demoDeliveryAddresses = ['ул. Пушкинская, 120А', 'просп. Соколова, 45']
 const pickupLocations: Record<BrandId, string[]> = Object.fromEntries(
@@ -335,6 +338,10 @@ function FormatScreen({ go, session, update }: { go: Go; session: Session; updat
 
 function MenuScreen({ go, session, update }: { go: Go; session: Session; update: (p: Partial<Session>) => void }) {
   const items = dishes[session.brand]
+  const [category, setCategory] = useState<DishCategory | 'all'>('all')
+  useEffect(() => setCategory('all'), [session.brand])
+  const categories = [...new Set(items.map((item) => item.category))]
+  const visibleItems = category === 'all' ? items : items.filter((item) => item.category === category)
   const count = itemCount(session.cart[session.brand])
   const total = cartTotal(session.cart[session.brand], prices(session.brand))
   const add = (itemId: string) => update({
@@ -344,9 +351,9 @@ function MenuScreen({ go, session, update }: { go: Go; session: Session; update:
     <ScreenHeader title={brands[session.brand].name} go={go} back={`/brand/${session.brand}/format`} />
     <button className="menu-context" onClick={() => go(`/brand/${session.brand}/format`)}><span><b>{session.service === 'delivery' ? 'Доставка' : 'Самовывоз'}</b><small>{session.address}</small></span><ChevronRight /></button>
     <div className="menu-title"><div><p className="eyebrow">Доступно сейчас</p><h1>Меню</h1></div><button aria-label="Поиск" onClick={() => go('/search')}><Search /></button></div>
-    <div className="chips"><span className="active">Популярное</span><button onClick={() => go('/search')}>Основное</button><button onClick={() => go('/search')}>Десерты</button></div>
+    {categories.length > 1 && <div className="chips"><button className={category === 'all' ? 'active' : ''} onClick={() => setCategory('all')}>Все блюда</button>{categories.map((id) => <button key={id} className={category === id ? 'active' : ''} onClick={() => setCategory(id)}>{categoryLabels[id]}</button>)}</div>}
     <div className="dish-list">
-      {items.map((item) => <article className="dish-card" key={item.id}><button className="dish-art-button" aria-label={`Открыть ${item.title}`} onClick={() => go(`/product/${item.id}`)}><DishArt item={item} /></button><div><button className="dish-title" onClick={() => go(`/product/${item.id}`)}>{item.title}</button><small>{item.meta}</small><footer><b>{item.price ? `${item.price} ₽` : 'Уточнить'}</b>{item.price ? <button aria-label={`Добавить ${item.title}`} onClick={() => add(item.id)}><Plus /></button> : <button aria-label="Открыть" onClick={() => go(`/product/${item.id}`)}><ArrowRight /></button>}</footer></div></article>)}
+      {visibleItems.map((item) => <article className="dish-card" key={item.id}><button className="dish-art-button" aria-label={`Открыть ${item.title}`} onClick={() => go(`/product/${item.id}`)}><DishArt item={item} /></button><div><button className="dish-title" onClick={() => go(`/product/${item.id}`)}>{item.title}</button><small>{item.meta}</small><footer><b>{item.price ? `${item.price} ₽` : 'Уточнить'}</b>{item.price ? <button aria-label={`Добавить ${item.title}`} onClick={() => add(item.id)}><Plus /></button> : <button aria-label="Открыть" onClick={() => go(`/product/${item.id}`)}><ArrowRight /></button>}</footer></div></article>)}
     </div>
     <p className="demo-caption">Ассортимент и цены собраны по открытым меню на 11.08.2026 и могут измениться.</p>
     {count > 0 && <button className="floating-cart" onClick={() => go(`/cart/${session.brand}`)}><span><ShoppingBag /> {count}</span><b>В корзину</b><span>{total ? `${total} ₽` : 'Уточнить'}</span></button>}
@@ -356,10 +363,11 @@ function MenuScreen({ go, session, update }: { go: Go; session: Session; update:
 function ProductScreen({ go, session, update, productId }: { go: Go; session: Session; update: (p: Partial<Session>) => void; productId: string }) {
   const item = dishes[session.brand].find((entry) => entry.id === productId)
   const [count, setCount] = useState(1)
+  const [note, setNote] = useState('')
   if (!item) return <div className="screen product-screen"><ScreenHeader title="Блюдо" go={go} back={`/brand/${session.brand}/menu`} /><div className="empty"><UtensilsCrossed /><h1>Блюдо не найдено</h1><p>Откройте меню и выберите доступную позицию.</p><button className="cta" onClick={() => go(`/brand/${session.brand}/menu`)}>Открыть меню</button></div></div>
   const add = () => {
     update({
-      cart: { ...session.cart, [session.brand]: addItem(session.cart[session.brand], item.id, count) },
+      cart: { ...session.cart, [session.brand]: addItem(session.cart[session.brand], lineKey(item.id, note), count) },
     })
     go(`/cart/${session.brand}`)
   }
@@ -367,7 +375,7 @@ function ProductScreen({ go, session, update, productId }: { go: Go; session: Se
     <ScreenHeader title={brands[session.brand].name} go={go} back={`/brand/${session.brand}/menu`} />
     <DishArt item={item} large />
     <p className="eyebrow">{item.meta}</p><h1>{item.title}</h1><p className="lead">Состав и доступность сверяются для выбранной точки перед оформлением.</p>
-    <div className="option"><span><b>Стандартная подача</b><small>Без изменений</small></span><Check /></div>
+    <label className="product-note"><span>Пожелание к блюду</span><textarea value={note} onChange={(event) => setNote(event.target.value.slice(0, 120))} placeholder="Например, без лука" maxLength={120} /><small>Уточним возможность изменения при подтверждении заказа.</small></label>
     <div className="product-buy"><div className="counter"><button aria-label="Уменьшить" onClick={() => setCount(Math.max(1, count - 1))}><Minus /></button><b>{count}</b><button aria-label="Увеличить" onClick={() => setCount(count + 1)}><Plus /></button></div><button className="cta" onClick={add}>Добавить · {item.price * count} ₽</button></div>
   </div>
 }
@@ -383,10 +391,10 @@ function CartScreen({ go, session, update }: { go: Go; session: Session; update:
     <ScreenHeader title="Корзина" go={go} back={`/brand/${session.brand}/menu`} />
     <div className="cart-brand"><BrandMark id={session.brand} small /><span><b>{brands[session.brand].name}</b><small>Отдельный заказ бренда</small></span></div>
     {count === 0 ? <div className="empty"><ShoppingBag /><h1>Корзина пока пуста</h1><p>Выберите позиции в меню этого бренда.</p><button className="cta" onClick={() => go(`/brand/${session.brand}/menu`)}>Перейти в меню</button></div> : <>
-      {lines.map(({ item, count: quantity }) => <article className="cart-item" key={item.id}>
+      {lines.map(({ key, item, note, count: quantity }) => <article className="cart-item" key={key}>
         <MiniDishArt item={item} />
-        <span><b>{item.title}</b><small>Стандартная подача</small><em>{item.price ? `${item.price} ₽` : 'Цена уточняется'}</em></span>
-        <div className="counter small"><button aria-label={`Уменьшить ${item.title}`} onClick={() => change(item.id, quantity - 1)}><Minus /></button><b>{quantity}</b><button aria-label={`Увеличить ${item.title}`} onClick={() => change(item.id, quantity + 1)}><Plus /></button></div>
+        <span><b>{item.title}</b>{note && <small>Пожелание: {note}</small>}<em>{item.price ? `${item.price} ₽` : 'Цена уточняется'}</em></span>
+        <div className="counter small"><button aria-label={`Уменьшить ${item.title}${note ? ` — ${note}` : ''}`} onClick={() => change(key, quantity - 1)}><Minus /></button><b>{quantity}</b><button aria-label={`Увеличить ${item.title}${note ? ` — ${note}` : ''}`} onClick={() => change(key, quantity + 1)}><Plus /></button></div>
       </article>)}
       <button className="add-more" onClick={() => go(`/brand/${session.brand}/menu`)}><Plus /> Добавить ещё из {brands[session.brand].name}</button>
       <div className="cart-summary"><span>Товары <b>{total ? `${total} ₽` : 'уточняются'}</b></span><span>{session.service === 'delivery' ? 'Доставка' : 'Самовывоз'} <b>{session.service === 'delivery' ? 'рассчитается далее' : '0 ₽'}</b></span><strong>Итого <b>{total ? `${total} ₽` : 'после уточнения'}</b></strong></div>
@@ -434,7 +442,7 @@ function CheckoutScreen({ go, session, update, loading, setLoading }: { go: Go; 
     <div className="checkout-block"><span><Clock3 /><b>{time}</b></span><small>Интервал подтвердит оператор</small><button onClick={() => setEditing('time')}>Выбрать</button></div>
     <div className="checkout-block"><span><CreditCard /><b>{card}</b></span><small>Выберите удобный способ</small><button onClick={() => setEditing('payment')}>Выбрать</button></div>
     {editing && <div className="choice-sheet" role="dialog" aria-label={editing === 'time' ? 'Выбор времени' : 'Выбор оплаты'}><div><b>{editing === 'time' ? 'Когда получить заказ' : 'Способ оплаты'}</b><button aria-label="Закрыть" onClick={() => setEditing(null)}>×</button></div>{(editing === 'time' ? ['Ближайшее время', ...intervalOptions] : ['Банковская карта', 'При получении']).map((value) => <button className={(editing === 'time' ? time : card) === value ? 'active' : ''} key={value} onClick={() => { if (editing === 'time') setTime(value); else setCard(value); setEditing(null) }}>{value}<Check /></button>)}</div>}
-    <h2>Состав заказа</h2>{lines.map(({ item, count }) => <div className="checkout-order" key={item.id}><MiniDishArt item={item} /><span><b>{item.title}</b><small>{count} × {item.price ? `${item.price} ₽` : 'цена уточняется'}</small></span><strong>{item.price ? `${item.price * count} ₽` : 'уточняется'}</strong></div>)}
+    <h2>Состав заказа</h2>{lines.map(({ key, item, note, count }) => <div className="checkout-order" key={key}><MiniDishArt item={item} /><span><b>{item.title}</b><small>{count} × {item.price ? `${item.price} ₽` : 'цена уточняется'}{note ? ` · ${note}` : ''}</small></span><strong>{item.price ? `${item.price * count} ₽` : 'уточняется'}</strong></div>)}
     <h2>Контакты</h2><div className="contact-fields"><label><span>Имя</span><input value={session.profile.name} onChange={(event) => update({ profile: { ...session.profile, name: event.target.value } })} /></label><label><span>Телефон</span><input inputMode="tel" value={session.profile.phone} onChange={(event) => update({ profile: { ...session.profile, phone: event.target.value } })} /></label></div>
     <div className="total"><span>К оплате</span><b>{total ? `${total} ₽` : 'уточняется'}</b></div>
     <button className="cta" disabled={loading || !validContacts || !validTime} onClick={pay}>{loading ? <><span className="spinner" /> Проверяем…</> : <>Подтвердить заказ <ArrowRight /></>}</button>
@@ -501,7 +509,7 @@ function HistoryScreen({ go, session, update }: { go: Go; session: Session; upda
     <p className="eyebrow">История</p><h1>Ваши заказы</h1>
     {session.orders.length ? session.orders.map((order) => <article className="history-card" key={order.id}>
       <div><BrandMark id={order.brand} small /><span><b>{brands[order.brand].name}</b><small>{new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Moscow' }).format(new Date(order.createdAt))} · {order.service === 'delivery' ? 'доставка' : 'самовывоз'}</small></span></div>
-      <h3>{Object.keys(order.lines).map((id) => dishes[order.brand].find((item) => item.id === id)?.title || 'Позиция вне меню').join(', ')}</h3>
+      <h3>{Object.keys(order.lines).map((key) => { const title = dishes[order.brand].find((item) => item.id === lineItemId(key))?.title || 'Позиция вне меню'; const note = lineNote(key); return note ? `${title} · ${note}` : title }).join(', ')}</h3>
       <footer><b>{order.total} ₽</b><button onClick={() => { update({ brand: order.brand, repeatOrderId: order.id }); go('/repeat') }}>Повторить <ArrowRight /></button></footer>
     </article>) : <div className="empty compact"><History /><h3>Заказов пока нет</h3><p>После оформления заказ появится здесь, и его можно будет повторить.</p><button onClick={() => go('/order')}>Выбрать еду</button></div>}
   </div>
@@ -511,8 +519,8 @@ function RepeatScreen({ go, session, update }: { go: Go; session: Session; updat
   const [checked, setChecked] = useState(false)
   const order = session.orders.find((entry) => entry.id === session.repeatOrderId)
   if (!order) return <div className="screen repeat-screen"><ScreenHeader title="Повтор заказа" go={go} back="/history" /><div className="empty"><History /><h1>Нет заказа для повтора</h1><p>Выберите заказ в истории.</p><button className="cta" onClick={() => go('/history')}>Открыть историю</button></div></div>
-  const available = Object.entries(order.lines).filter(([id]) => dishes[order.brand].some((item) => item.id === id && item.price > 0))
-  const unavailable = Object.entries(order.lines).filter(([id]) => !dishes[order.brand].some((item) => item.id === id && item.price > 0))
+  const available = Object.entries(order.lines).filter(([key]) => dishes[order.brand].some((item) => item.id === lineItemId(key) && item.price > 0))
+  const unavailable = Object.entries(order.lines).filter(([key]) => !dishes[order.brand].some((item) => item.id === lineItemId(key) && item.price > 0))
   const repeat = () => {
     update({ brand: order.brand, cart: { ...session.cart, [order.brand]: Object.fromEntries(available) } })
     setChecked(true)
@@ -522,7 +530,7 @@ function RepeatScreen({ go, session, update }: { go: Go; session: Session; updat
     <p className="step">Проверка перед корзиной</p><h1>Повторить заказ</h1>
     <p className="lead">Цена и доступность проверяются заново для выбранного адреса.</p>
     <div className="repeat-list">
-      {available.map(([id, count]) => { const item = dishes[order.brand].find((entry) => entry.id === id)!; return <span key={id}><Check /><b>{item.title} · {count} шт.</b><em>{item.price * count} ₽</em></span> })}
+      {available.map(([key, count]) => { const item = dishes[order.brand].find((entry) => entry.id === lineItemId(key))!; const note = lineNote(key); return <span key={key}><Check /><b>{item.title} · {count} шт.{note ? ` · ${note}` : ''}</b><em>{item.price * count} ₽</em></span> })}
       {unavailable.map(([id]) => <span className="unavailable" key={id}><CircleAlert /><b>Позиция вне текущего меню</b><em>не добавлена</em></span>)}
     </div>
     {checked && <div className="success-note"><Check /><span><b>{available.length} позиции добавлены</b><small>Недоступные позиции пропущены. Корзина относится только к {brands[order.brand].name}.</small></span></div>}
