@@ -86,7 +86,7 @@ export function CasePage() {
 
     <section className="case-section architecture" id="section-7" data-index="7">
       <div className="section-heading"><p className="case-eyebrow">Связь с бизнесом</p><h2>Единый вход там,<br />где это удобно пользователю</h2></div>
-      <div className="architecture-grid"><article className="shell-card"><Layers3 /><h3>Общая оболочка</h3><ul><li>выбор задачи</li><li>переключение бренда</li><li>история действий</li><li>персональные рекомендации</li></ul></article><article className="brand-card"><Coffee /><h3>Контекст бренда</h3><ul><li>своё меню</li><li>свои условия получения</li><li>отдельная корзина</li><li>свои правила лояльности</li></ul></article><article className="restore-card"><PackageCheck /><h3>Восстановление</h3><p>После ошибки сохраняются корзина, адрес и формат. Возврат к оплате открывается с этими параметрами.</p><a href={`${prototype}/payment-error`}>Открыть состояние <ArrowRight /></a></article></div>
+      <div className="architecture-grid"><article className="shell-card"><Layers3 /><h3>Общая оболочка</h3><ul><li>выбор задачи</li><li>переключение бренда</li><li>история действий</li><li>персональные рекомендации</li></ul></article><article className="brand-card"><Coffee /><h3>Контекст бренда</h3><ul><li>своё меню</li><li>свои условия получения</li><li>отдельная корзина</li><li>свои правила лояльности</li></ul></article><article className="restore-card"><PackageCheck /><h3>Восстановление</h3><p>Добавьте блюдо, выберите оплату картой и подтвердите заказ: при демонстрационной ошибке корзина и параметры оформления сохранятся.</p><a href={`${prototype}/order`}>Пройти сценарий <ArrowRight /></a></article></div>
       <FooterMark number="08" />
     </section>
 

@@ -20,6 +20,8 @@ type Order = {
   createdAt: string
   lines: CartLines
   total: number
+  time?: string
+  payment?: string
 }
 
 type Session = {
@@ -28,6 +30,8 @@ type Session = {
   cart: Record<BrandId, CartLines>
   paymentFailed: boolean
   address: string
+  checkoutTime: string
+  checkoutPayment: string
   orders: Order[]
   repeatOrderId: string | null
   profile: { name: string; phone: string }
@@ -100,6 +104,8 @@ const initialSession: Session = {
   cart: emptyCart(),
   paymentFailed: false,
   address: 'ул. Пушкинская, 120А',
+  checkoutTime: 'Ближайшее время',
+  checkoutPayment: 'Банковская карта',
   orders: [],
   repeatOrderId: null,
   profile: { name: '', phone: '' },
@@ -119,6 +125,8 @@ function readSession(): Session {
     delete stored.cartItem
     if (!Array.isArray(stored.orders)) stored.orders = []
     stored.profile = { ...initialSession.profile, ...stored.profile }
+    stored.checkoutTime ||= initialSession.checkoutTime
+    stored.checkoutPayment ||= initialSession.checkoutPayment
     if (!bookingDateOptions().includes(stored.booking?.date)) stored.booking.date = 'Сегодня'
     if (!cakeDateOptions().includes(stored.cake?.date)) stored.cake.date = cakeDateOptions()[0]
     if (stored.address?.includes('· демо')) stored.address = stored.address.replace(' · демо', '').replace('Пушкинская, 120', 'Пушкинская, 120А')
@@ -154,19 +162,14 @@ export function App() {
   useEffect(() => {
     const fromRoute = routeBrand(route)
     if (fromRoute && fromRoute !== session.brand) {
-      setSession((value) => ({ ...value, brand: fromRoute }))
-    }
-  }, [route, session.brand])
-
-  useEffect(() => {
-    if (route === '/payment-error' && itemCount(session.cart[session.brand]) === 0) {
       setSession((value) => ({
         ...value,
-        paymentFailed: true,
-        cart: { ...value.cart, [value.brand]: addItem(value.cart[value.brand], dishes[value.brand][0].id) },
+        brand: fromRoute,
+        address: value.service === 'pickup' ? (pickupLocations[fromRoute][0] ?? '') : demoDeliveryAddresses[0],
+        paymentFailed: false,
       }))
     }
-  }, [route, session.brand, session.cart])
+  }, [route, session.brand])
 
   useEffect(() => sessionStorage.setItem('restprofi-demo-v2', JSON.stringify(session)), [session])
 
@@ -183,8 +186,10 @@ export function App() {
   const cartCount = itemCount(session.cart[session.brand])
 
   const page = useMemo(() => {
+    const requestedBrand = routeBrand(route)
+    if (requestedBrand && requestedBrand !== session.brand) return null
     if (route === '/') return <HomeScreen go={go} session={session} update={update} />
-    if (route === '/order') return <OrderBrandScreen go={go} update={update} />
+    if (route === '/order') return <OrderBrandScreen go={go} session={session} update={update} />
     if (route === '/search') return <SearchScreen go={go} session={session} />
     if (route === '/loyalty') return <LoyaltyScreen go={go} />
     if (route === '/history') return <HistoryScreen go={go} session={session} update={update} />
@@ -195,7 +200,7 @@ export function App() {
     if (route === '/cake') return <CakeScreen go={go} session={session} update={update} />
     if (route === '/cake/success') return <CakeSuccess go={go} session={session} />
     if (route === '/repeat') return <RepeatScreen go={go} session={session} update={update} />
-    if (route === '/payment-error') return <PaymentError go={go} session={session} />
+    if (route === '/payment-error') return session.paymentFailed && itemCount(session.cart[session.brand]) > 0 ? <PaymentError go={go} session={session} /> : <UnavailableCheckout go={go} />
     if (route === '/order/success') return <OrderSuccess go={go} session={session} />
     if (session.brand === 'cream' && (route === '/brand/cream/format' || route === '/brand/cream/menu' || route.startsWith('/cart/cream') || route.startsWith('/checkout/cream') || route === '/product/showcase')) return <CreamInfoScreen go={go} />
     if (route.startsWith('/brand/') && route.endsWith('/format')) return <FormatScreen go={go} session={session} update={update} />
@@ -203,7 +208,7 @@ export function App() {
     if (route.startsWith('/brand/')) return <BrandScreen go={go} session={session} />
     if (route.startsWith('/product/')) return <ProductScreen go={go} session={session} update={update} productId={route.split('/').pop() || ''} />
     if (route.startsWith('/cart/')) return <CartScreen go={go} session={session} update={update} />
-    if (route.startsWith('/checkout/')) return <CheckoutScreen go={go} session={session} update={update} loading={loading} setLoading={setLoading} />
+    if (route.startsWith('/checkout/')) return itemCount(session.cart[session.brand]) > 0 ? <CheckoutScreen go={go} session={session} update={update} loading={loading} setLoading={setLoading} /> : <UnavailableCheckout go={go} brand={session.brand} />
     return <NotFound go={go} />
   }, [route, session, loading])
 
@@ -251,7 +256,10 @@ function MiniDishArt({ item }: { item: { id: string; art: string } }) {
 }
 
 function HomeScreen({ go, session, update }: { go: Go; session: Session; update: (p: Partial<Session>) => void }) {
-  const pick = (id: BrandId) => { update({ brand: id }); go(`/brand/${id}`) }
+  const pick = (id: BrandId) => {
+    update({ brand: id, address: session.service === 'pickup' ? (pickupLocations[id][0] ?? '') : demoDeliveryAddresses[0], paymentFailed: false })
+    go(`/brand/${id}`)
+  }
   return <div className="screen home-screen">
     <div className="home-heading"><div><p className="eyebrow">Добрый день</p><h1>Что хочется<br />сегодня?</h1></div><button className="avatar" aria-label="Профиль" onClick={() => go('/profile')}><UserRound /></button></div>
     <button className="context-card" onClick={() => go(`/brand/${session.brand}/format`)}>
@@ -270,9 +278,9 @@ function HomeScreen({ go, session, update }: { go: Go; session: Session; update:
   </div>
 }
 
-function OrderBrandScreen({ go, update }: { go: Go; update: (p: Partial<Session>) => void }) {
+function OrderBrandScreen({ go, session, update }: { go: Go; session: Session; update: (p: Partial<Session>) => void }) {
   const select = (brand: 'pitcofe' | 'mamadonna') => {
-    update({ brand })
+    update({ brand, address: session.service === 'pickup' ? (pickupLocations[brand][0] ?? '') : demoDeliveryAddresses[0], paymentFailed: false })
     go(`/brand/${brand}/format`)
   }
   return <div className="screen order-brand-screen"><ScreenHeader title="Заказ еды" go={go} /><p className="step">01 / Бренд</p><h1>Где хотите<br />сделать заказ?</h1><p className="lead">Меню, условия и корзина останутся внутри выбранного бренда.</p><div className="brand-stack order-brand-list">{(['pitcofe', 'mamadonna'] as const).map((id) => <button className={`brand-row brand-${brands[id].tone}`} key={id} onClick={() => select(id)}><BrandMark id={id} /><span><b>{brands[id].name}</b><small>{brands[id].note}</small></span><ChevronRight /></button>)}</div><div className="info-note"><ShoppingBag /><span><b>Корзины не смешиваются</b><small>Переход в другой бренд откроет его собственный контекст.</small></span></div></div>
@@ -405,26 +413,27 @@ function CartScreen({ go, session, update }: { go: Go; session: Session; update:
 }
 
 function CheckoutScreen({ go, session, update, loading, setLoading }: { go: Go; session: Session; update: (p: Partial<Session>) => void; loading: boolean; setLoading: (v: boolean) => void }) {
-  const [time, setTime] = useState('Ближайшее время')
+  const time = session.checkoutTime
   const [now, setNow] = useState(() => new Date())
   useEffect(() => { const timer = window.setInterval(() => setNow(new Date()), 60_000); return () => window.clearInterval(timer) }, [])
   const intervalOptions = upcomingOrderIntervals(now)
   const validTime = time === 'Ближайшее время' || intervalOptions.includes(time)
-  const [card, setCard] = useState('Банковская карта')
+  const card = session.checkoutPayment
   const [editing, setEditing] = useState<'time' | 'payment' | null>(null)
   const lines = cartEntries(session, session.brand)
   const total = cartTotal(session.cart[session.brand], prices(session.brand))
   const validContacts = session.profile.name.trim().length >= 2 && session.profile.phone.replace(/\D/g, '').length >= 11
   const pay = () => {
+    if (!lines.length || !validContacts || !validTime || loading) return
     setLoading(true)
     window.setTimeout(() => {
       setLoading(false)
-      if (!session.paymentFailed) { update({ paymentFailed: true }); go('/payment-error') }
+      if (card === 'Банковская карта' && !session.paymentFailed) { update({ paymentFailed: true }); go('/payment-error') }
       else {
         const order: Order = {
           id: `RP-${Date.now()}`, brand: session.brand, service: session.service,
           address: session.address, createdAt: new Date().toISOString(),
-          lines: { ...session.cart[session.brand] }, total,
+          lines: { ...session.cart[session.brand] }, total, time, payment: card,
         }
         update({
           orders: [order, ...session.orders],
@@ -441,14 +450,18 @@ function CheckoutScreen({ go, session, update, loading, setLoading }: { go: Go; 
     <div className="checkout-block"><span>{session.service === 'delivery' ? <Truck /> : <Store />}<b>{session.service === 'delivery' ? 'Доставка' : 'Самовывоз'}</b></span><small>{session.address}</small><button onClick={() => go(`/brand/${session.brand}/format`)}>Изменить</button></div>
     <div className="checkout-block"><span><Clock3 /><b>{time}</b></span><small>Интервал подтвердит оператор</small><button onClick={() => setEditing('time')}>Выбрать</button></div>
     <div className="checkout-block"><span><CreditCard /><b>{card}</b></span><small>Выберите удобный способ</small><button onClick={() => setEditing('payment')}>Выбрать</button></div>
-    {editing && <div className="choice-sheet" role="dialog" aria-label={editing === 'time' ? 'Выбор времени' : 'Выбор оплаты'}><div><b>{editing === 'time' ? 'Когда получить заказ' : 'Способ оплаты'}</b><button aria-label="Закрыть" onClick={() => setEditing(null)}>×</button></div>{(editing === 'time' ? ['Ближайшее время', ...intervalOptions] : ['Банковская карта', 'При получении']).map((value) => <button className={(editing === 'time' ? time : card) === value ? 'active' : ''} key={value} onClick={() => { if (editing === 'time') setTime(value); else setCard(value); setEditing(null) }}>{value}<Check /></button>)}</div>}
+    {editing && <div className="choice-sheet" role="dialog" aria-label={editing === 'time' ? 'Выбор времени' : 'Выбор оплаты'}><div><b>{editing === 'time' ? 'Когда получить заказ' : 'Способ оплаты'}</b><button aria-label="Закрыть" onClick={() => setEditing(null)}>×</button></div>{(editing === 'time' ? ['Ближайшее время', ...intervalOptions] : ['Банковская карта', 'При получении']).map((value) => <button className={(editing === 'time' ? time : card) === value ? 'active' : ''} key={value} onClick={() => { update(editing === 'time' ? { checkoutTime: value } : { checkoutPayment: value }); setEditing(null) }}>{value}<Check /></button>)}</div>}
     <h2>Состав заказа</h2>{lines.map(({ key, item, note, count }) => <div className="checkout-order" key={key}><MiniDishArt item={item} /><span><b>{item.title}</b><small>{count} × {item.price ? `${item.price} ₽` : 'цена уточняется'}{note ? ` · ${note}` : ''}</small></span><strong>{item.price ? `${item.price * count} ₽` : 'уточняется'}</strong></div>)}
     <h2>Контакты</h2><div className="contact-fields"><label><span>Имя</span><input value={session.profile.name} onChange={(event) => update({ profile: { ...session.profile, name: event.target.value } })} /></label><label><span>Телефон</span><input inputMode="tel" value={session.profile.phone} onChange={(event) => update({ profile: { ...session.profile, phone: event.target.value } })} /></label></div>
     <div className="total"><span>К оплате</span><b>{total ? `${total} ₽` : 'уточняется'}</b></div>
-    <button className="cta" disabled={loading || !validContacts || !validTime} onClick={pay}>{loading ? <><span className="spinner" /> Проверяем…</> : <>Подтвердить заказ <ArrowRight /></>}</button>
+    <button className="cta" disabled={loading || !lines.length || !validContacts || !validTime} onClick={pay}>{loading ? <><span className="spinner" /> Проверяем…</> : <>Подтвердить заказ <ArrowRight /></>}</button>
     {!validContacts && <p className="field-error">Укажите имя и телефон, чтобы продолжить.</p>}
     {!validTime && <p className="field-error">Выбранный интервал уже прошёл. Укажите другое время.</p>}
   </div>
+}
+
+function UnavailableCheckout({ go, brand }: { go: Go; brand?: BrandId }) {
+  return <div className="screen status-screen"><div className="status-icon"><ShoppingBag /></div><h1>Оформлять пока нечего</h1><p>Добавьте позиции в корзину, чтобы продолжить.</p><button className="cta" onClick={() => go(brand ? `/brand/${brand}/menu` : '/order')}>{brand ? 'Открыть меню' : 'Выбрать бренд'}</button></div>
 }
 
 function PaymentError({ go, session }: { go: Go; session: Session }) {
@@ -457,7 +470,8 @@ function PaymentError({ go, session }: { go: Go; session: Session }) {
 
 function OrderSuccess({ go, session }: { go: Go; session: Session }) {
   if (!session.orders.length) return <div className="screen status-screen"><h1>Заказ не найден</h1><p>Оформите заказ, чтобы увидеть подтверждение и повторить его из истории.</p><button className="cta" onClick={() => go('/order')}>К выбору еды</button></div>
-  return <div className="screen status-screen success-screen"><div className="status-icon"><PackageCheck /></div><p className="eyebrow">Готово</p><h1>Заказ подтверждён</h1><p>№ {session.orders[0]?.id || 'RP'} · {brands[session.brand].name}<br />Заказ сохранён в истории.</p><div className="timeline"><i /><span><b>Принят</b><small>сейчас</small></span><i /><span><b>Следующий шаг</b><small>подтверждение</small></span></div><button className="cta" onClick={() => go('/')}>На главный экран</button><button className="text-button" onClick={() => go('/history')}>История заказов</button></div>
+  const order = session.orders[0]
+  return <div className="screen status-screen success-screen"><div className="status-icon"><PackageCheck /></div><p className="eyebrow">Демонстрационный заказ</p><h1>Заказ сохранён</h1><p>№ {order.id} · {brands[order.brand].name}<br />{order.service === 'pickup' ? 'Самовывоз' : 'Доставка'}: {order.address}<br />{order.time || 'Ближайшее время'} · {order.payment || 'Способ оплаты не сохранён'}<br />Сумма товаров: {order.total} ₽</p><div className="timeline"><i /><span><b>Заявка сохранена в браузере</b><small>Реальный заказ не отправлен</small></span></div><button className="cta" onClick={() => go('/')}>На главный экран</button><button className="text-button" onClick={() => go('/history')}>История заказов</button></div>
 }
 
 function BookingScreen({ go, session, update }: { go: Go; session: Session; update: (p: Partial<Session>) => void }) {

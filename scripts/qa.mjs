@@ -150,7 +150,7 @@ await flow.getByRole('heading', { name: 'Корзина на месте' }).wait
 await flow.reload()
 await flow.getByRole('button', { name: 'Вернуться к оплате' }).click()
 await flow.getByRole('button', { name: /Подтвердить заказ/ }).click()
-await flow.getByRole('heading', { name: 'Заказ подтверждён' }).waitFor()
+await flow.getByRole('heading', { name: 'Заказ сохранён' }).waitFor()
 report.scenarios.push({ name: 'заказ → ошибка оплаты → восстановление', status: 'passed' })
 
 await flow.getByRole('button', { name: 'История заказов' }).click()
