@@ -13,6 +13,10 @@ import { addItem, cartTotal, itemCount, lineItemId, lineKey, lineNote, setItemCo
 type BrandId = 'pitcofe' | 'mamadonna' | 'esttort' | 'cream'
 type Service = 'delivery' | 'pickup'
 type BrandContext = { service: Service; address: string }
+const validDeliveryAddress = (value: string) => {
+  const address = value.trim()
+  return address.length >= 10 && /(?:ул\.|улица|проспект|пр-т|переулок|пер\.|шоссе|набережная|бульвар)/i.test(address) && /\d+[а-яa-z]?(?:\/\d+)?/i.test(address)
+}
 type BookingRequest = {
   id: string
   brand: 'pitcofe' | 'mamadonna'
@@ -342,7 +346,7 @@ function HomeScreen({ go, session, update }: { go: Go; session: Session; update:
   return <div className="screen home-screen">
     <div className="home-heading"><div><p className="eyebrow">Добрый день</p><h1>Что хочется<br />сегодня?</h1></div><button className="avatar" aria-label="Профиль" onClick={() => go('/profile')}><UserRound /></button></div>
     <button className="context-card" onClick={() => go(`/brand/${session.brand}/format`)}>
-      <MapPin /><span><b>{session.brand === 'cream' ? 'Что известно о Cream' : session.service === 'delivery' ? 'Проверить доставку' : 'Изменить самовывоз'}</b><small>{session.brand === 'cream' ? 'Адрес и заказ пока не подтверждены' : session.address}</small></span><ChevronRight />
+      <MapPin /><span><b>{session.brand === 'cream' ? 'Что известно о Cream' : session.service === 'delivery' ? 'Адрес доставки' : 'Изменить самовывоз'}</b><small>{session.brand === 'cream' ? 'Адрес и заказ пока не подтверждены' : session.address}</small></span><ChevronRight />
     </button>
     <div className="task-grid">
       <button className="task task-order" onClick={() => go('/order')}><ShoppingBag /><b>Заказать еду</b><span>сначала бренд, затем формат</span></button>
@@ -404,9 +408,9 @@ function FormatScreen({ go, session, update }: { go: Go; session: Session; updat
   })
   return <div className="screen format-screen">
     <ScreenHeader title={brands[session.brand].name} go={go} back={`/brand/${session.brand}`} />
-    <p className="step">01 / Формат</p><h1>Как получить заказ?</h1><p className="lead">Формат определяет доступное меню и условия до наполнения корзины.</p>
+    <p className="step">01 / Формат</p><h1>Как получить заказ?</h1><p className="lead">Выберите способ получения перед просмотром меню. Наличие и условия доставки в концепте не проверяются автоматически.</p>
     <div className="segmented">
-      <button className={session.service === 'delivery' ? 'active' : ''} onClick={() => selectService('delivery')}><Truck /><b>Доставка</b><small>условия после адреса</small></button>
+      <button className={session.service === 'delivery' ? 'active' : ''} onClick={() => selectService('delivery')}><Truck /><b>Доставка</b><small>зону уточнит ресторан</small></button>
       <button className={session.service === 'pickup' ? 'active' : ''} onClick={() => selectService('pickup')}><Store /><b>Самовывоз</b><small>из выбранной точки</small></button>
     </div>
     <h2>{session.service === 'delivery' ? 'Куда доставить' : 'Где забрать'}</h2>
@@ -416,10 +420,12 @@ function FormatScreen({ go, session, update }: { go: Go; session: Session; updat
       onSelect={(location) => update({ address: location.address })}
       title={`Точки ${brands[session.brand].name}`}
       onValidityChange={setSelectionValid}
-    /> : <div className="location-list">{locations.map((location) => <button className={`location-choice ${session.address === location ? 'active' : ''}`} key={location} onClick={() => update({ address: location })}><MapPin /><span><b>{location}</b><small>{session.service === 'delivery' ? 'Зона и срок уточняются до оформления' : 'Условия и доступность проверяются до меню'}</small></span>{session.address === location ? <Check /> : <ChevronRight />}</button>)}</div>}
+    /> : <div className="location-list">{locations.map((location) => <button className={`location-choice ${session.address === location ? 'active' : ''}`} key={location} onClick={() => update({ address: location })}><MapPin /><span><b>{location}</b><small>{session.service === 'delivery' ? 'Пример адреса · зону уточнит ресторан' : 'Точка самовывоза'}</small></span>{session.address === location ? <Check /> : <ChevronRight />}</button>)}</div>}
+    {session.service === 'delivery' && <label className="profile-field"><span>Свой адрес · улица и дом</span><input value={session.address} onChange={(event) => update({ address: event.target.value })} placeholder="Улица, дом, квартира" /></label>}
+    {session.service === 'delivery' && !validDeliveryAddress(session.address) && <p className="field-error">Укажите улицу и номер дома. Доступность доставки ресторан подтвердит отдельно.</p>}
     {session.service === 'pickup' && !mapLocations.length && <div className="empty"><MapPin /><h2>Адрес требует подтверждения</h2><p>В официальных источниках не найден актуальный публичный адрес точки Cream. Мы не показываем вымышленный маркер.</p></div>}
-    <div className="info-note"><Clock3 /><span><b>Условия показаны заранее</b><small>Фактическое время и минимальная сумма зависят от адреса и загрузки точки.</small></span></div>
-    <button className="cta" disabled={session.service === 'pickup' && (!mapLocations.length || !selectionValid)} onClick={() => go(`/brand/${session.brand}/menu`)}>Смотреть доступное меню <ArrowRight /></button>
+    <div className="info-note"><Clock3 /><span><b>Условия уточняются</b><small>Реальная зона, стоимость, минимальная сумма и время доставки здесь не рассчитываются.</small></span></div>
+    <button className="cta" disabled={session.service === 'pickup' ? !mapLocations.length || !selectionValid : !validDeliveryAddress(session.address)} onClick={() => go(`/brand/${session.brand}/menu`)}>Смотреть доступное меню <ArrowRight /></button>
   </div>
 }
 
@@ -484,7 +490,7 @@ function CartScreen({ go, session, update }: { go: Go; session: Session; update:
         <div className="counter small"><button aria-label={`Уменьшить ${item.title}${note ? ` — ${note}` : ''}`} onClick={() => change(key, quantity - 1)}><Minus /></button><b>{quantity}</b><button aria-label={`Увеличить ${item.title}${note ? ` — ${note}` : ''}`} onClick={() => change(key, quantity + 1)}><Plus /></button></div>
       </article>)}
       <button className="add-more" onClick={() => go(`/brand/${session.brand}/menu`)}><Plus /> Добавить ещё из {brands[session.brand].name}</button>
-      <div className="cart-summary"><span>Товары <b>{total ? `${total} ₽` : 'уточняются'}</b></span><span>{session.service === 'delivery' ? 'Доставка' : 'Самовывоз'} <b>{session.service === 'delivery' ? 'рассчитается далее' : '0 ₽'}</b></span><strong>Итого <b>{total ? `${total} ₽` : 'после уточнения'}</b></strong></div>
+      <div className="cart-summary"><span>Товары <b>{total ? `${total} ₽` : 'уточняются'}</b></span><span>{session.service === 'delivery' ? 'Доставка' : 'Самовывоз'} <b>{session.service === 'delivery' ? 'не рассчитана' : '0 ₽'}</b></span><strong>Сумма товаров <b>{total ? `${total} ₽` : 'после уточнения'}</b></strong></div>
       <p className="safe-note">Корзина сохранится, даже если оплата завершится ошибкой.</p>
       <button className="cta" onClick={() => go(`/checkout/${session.brand}`)}>К оформлению <ArrowRight /></button>
     </>}
@@ -503,7 +509,7 @@ function CheckoutScreen({ go, session, update, loading, setLoading }: { go: Go; 
   const total = cartTotal(session.cart[session.brand], prices(session.brand))
   const validContacts = session.profile.name.trim().length >= 2 && session.profile.phone.replace(/\D/g, '').length >= 11
   const pay = () => {
-    if (!lines.length || !validContacts || !validTime || loading) return
+    if (!lines.length || !validContacts || !validTime || (session.service === 'delivery' && !validDeliveryAddress(session.address)) || loading) return
     setLoading(true)
     window.setTimeout(() => {
       setLoading(false)
@@ -534,7 +540,7 @@ function CheckoutScreen({ go, session, update, loading, setLoading }: { go: Go; 
     <h2>Контакты</h2><div className="contact-fields"><label><span>Имя</span><input value={session.profile.name} onChange={(event) => update({ profile: { ...session.profile, name: event.target.value } })} /></label><label><span>Телефон</span><input inputMode="tel" value={session.profile.phone} onChange={(event) => update({ profile: { ...session.profile, phone: event.target.value } })} /></label></div>
     <div className="total"><span>Сумма товаров</span><b>{total ? `${total} ₽` : 'уточняется'}</b></div>
     {session.service === 'delivery' && <p className="field-hint">Доставка в прототипе не рассчитана; окончательная сумма и зона доставки потребуют подтверждения ресторана.</p>}
-    <button className="cta" disabled={loading || !lines.length || !validContacts || !validTime} onClick={pay}>{loading ? <><span className="spinner" /> Проверяем…</> : <>Подтвердить заказ <ArrowRight /></>}</button>
+    <button className="cta" disabled={loading || !lines.length || !validContacts || !validTime || (session.service === 'delivery' && !validDeliveryAddress(session.address))} onClick={pay}>{loading ? <><span className="spinner" /> Проверяем…</> : <>Подтвердить заказ <ArrowRight /></>}</button>
     {!validContacts && <p className="field-error">Укажите имя и телефон, чтобы продолжить.</p>}
     {!validTime && <p className="field-error">Выбранный интервал уже прошёл. Укажите другое время.</p>}
   </div>

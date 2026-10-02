@@ -64,14 +64,14 @@ export function CasePage() {
     </section>
 
     <section className="case-section scenario order" id="section-4" data-index="4">
-      <div className="section-heading"><p className="case-eyebrow">Ключевой сценарий № 1</p><h2>Заказ начинается<br />с условий получения</h2><p>Формат и адрес определяют доступное меню до того, как пользователь наполнит корзину. Для самовывоза работает интерактивная карта подтверждённых точек с поиском и синхронным списком.</p><a className="case-button dark" href={`${prototype}/brand/pitcofe/format`}><Play /> Посмотреть сценарий</a></div>
+      <div className="section-heading"><p className="case-eyebrow">Ключевой сценарий № 1</p><h2>Заказ начинается<br />с условий получения</h2><p>Формат и адрес выбираются перед меню. Для самовывоза работает карта точек с поиском и синхронным списком; проверка зоны доставки и доступности меню требует интеграции.</p><a className="case-button dark" href={`${prototype}/brand/pitcofe/format`}><Play /> Посмотреть сценарий</a></div>
       <div className="scenario-steps"><Step icon={<Truck />} n="01" title="Формат" text="Доставка или самовывоз" /><Step icon={<MapPin />} n="02" title="Карта" text="Поиск и выбор реальной точки" /><Step icon={<Coffee />} n="03" title="Меню" text="Доступное для выбранного контекста" /><Step icon={<ShoppingBag />} n="04" title="Корзина" text="Только позиции одного бренда" /></div>
       <PhoneMock kind="order" />
       <FooterMark number="05" />
     </section>
 
     <section className="case-section scenario booking" id="section-5" data-index="5">
-      <div className="section-heading"><p className="case-eyebrow">Ключевой сценарий № 2</p><h2>Бронирование<br />без звонка в прототипе</h2><p>Ресторан → дата → время → гости → понятное подтверждение со стороны заведения.</p><a className="case-button dark" href={`${prototype}/booking`}><Play /> Посмотреть сценарий</a></div>
+      <div className="section-heading"><p className="case-eyebrow">Ключевой сценарий № 2</p><h2>Запрос столика<br />в прототипе</h2><p>Ресторан → дата → время → гости → демо-заявка в истории. Для настоящей брони нужно подтверждение ресторана.</p><a className="case-button dark" href={`${prototype}/booking`}><Play /> Посмотреть сценарий</a></div>
       <div className="booking-timeline"><div><b>19:30</b><small>выбранное время</small></div><i /><div><b>2 гостя</b><small>один явный параметр</small></div><i /><div><b>Подтверждено</b><small>финальное состояние</small></div></div>
       <PhoneMock kind="booking" />
       <FooterMark number="06" />
@@ -86,7 +86,7 @@ export function CasePage() {
 
     <section className="case-section architecture" id="section-7" data-index="7">
       <div className="section-heading"><p className="case-eyebrow">Связь с бизнесом</p><h2>Единый вход там,<br />где это удобно пользователю</h2></div>
-      <div className="architecture-grid"><article className="shell-card"><Layers3 /><h3>Общая оболочка</h3><ul><li>выбор задачи</li><li>переключение бренда</li><li>история действий</li><li>персональные рекомендации</li></ul></article><article className="brand-card"><Coffee /><h3>Контекст бренда</h3><ul><li>своё меню</li><li>свои условия получения</li><li>отдельная корзина</li><li>свои правила лояльности</li></ul></article><article className="restore-card"><PackageCheck /><h3>Восстановление</h3><p>Добавьте блюдо, выберите оплату картой и подтвердите заказ: при демонстрационной ошибке корзина и параметры оформления сохранятся.</p><a href={`${prototype}/order`}>Пройти сценарий <ArrowRight /></a></article></div>
+      <div className="architecture-grid"><article className="shell-card"><Layers3 /><h3>Общая оболочка</h3><ul><li>выбор задачи</li><li>переключение бренда</li><li>история действий</li><li>предложения других брендов</li></ul></article><article className="brand-card"><Coffee /><h3>Контекст бренда</h3><ul><li>своё меню</li><li>свои условия получения</li><li>отдельная корзина</li><li>свои правила лояльности</li></ul></article><article className="restore-card"><PackageCheck /><h3>Восстановление</h3><p>Добавьте блюдо, выберите оплату картой и подтвердите заказ: при демонстрационной ошибке корзина и параметры оформления сохранятся.</p><a href={`${prototype}/order`}>Пройти сценарий <ArrowRight /></a></article></div>
       <FooterMark number="08" />
     </section>
 

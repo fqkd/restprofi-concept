@@ -131,3 +131,16 @@ test('точка самовывоза не переносится в друго�
   await page.goto('#/brand/pitcofe/menu')
   await expect(page.getByRole('button', { name: /проспект Космонавтов, 2\/2/ })).toBeVisible()
 })
+
+test('свой адрес доставки требует улицу и дом и сохраняется для выбранного бренда', async ({ page }) => {
+  await page.goto('#/brand/pitcofe/format')
+  await page.getByRole('button', { name: /Доставка/ }).click()
+  await page.getByRole('textbox', { name: 'Свой адрес · улица и дом' }).fill('абракадабра')
+  await expect(page.getByRole('button', { name: /Смотреть доступное меню/ })).toBeDisabled()
+  await page.getByRole('textbox', { name: 'Свой адрес · улица и дом' }).fill('ул. Советская, 7, кв. 5')
+  await expect(page.getByRole('button', { name: /Смотреть доступное меню/ })).toBeEnabled()
+  await page.reload()
+  await expect(page.getByRole('textbox', { name: 'Свой адрес · улица и дом' })).toHaveValue('ул. Советская, 7, кв. 5')
+  await page.getByRole('button', { name: /Смотреть доступное меню/ }).click()
+  await expect(page.getByRole('button', { name: /ул. Советская, 7, кв. 5/ })).toBeVisible()
+})
