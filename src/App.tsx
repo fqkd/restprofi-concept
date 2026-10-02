@@ -12,6 +12,7 @@ import { addItem, cartTotal, itemCount, lineItemId, lineKey, lineNote, setItemCo
 
 type BrandId = 'pitcofe' | 'mamadonna' | 'esttort' | 'cream'
 type Service = 'delivery' | 'pickup'
+type BrandContext = { service: Service; address: string }
 type Order = {
   id: string
   brand: BrandId
@@ -30,6 +31,7 @@ type Session = {
   cart: Record<BrandId, CartLines>
   paymentFailed: boolean
   address: string
+  contexts: Record<BrandId, BrandContext>
   checkoutTime: string
   checkoutPayment: string
   orders: Order[]
@@ -97,6 +99,9 @@ const demoDeliveryAddresses = ['ул. Пушкинская, 120А', 'просп.
 const pickupLocations: Record<BrandId, string[]> = Object.fromEntries(
   Object.entries(locationsByBrand).map(([brand, locations]) => [brand, locations.map((location) => location.address)]),
 ) as Record<BrandId, string[]>
+const defaultContexts = (): Record<BrandId, BrandContext> => Object.fromEntries(
+  (Object.keys(brands) as BrandId[]).map((brand) => [brand, { service: 'delivery', address: demoDeliveryAddresses[0] }]),
+) as Record<BrandId, BrandContext>
 
 const initialSession: Session = {
   brand: 'pitcofe',
@@ -104,6 +109,7 @@ const initialSession: Session = {
   cart: emptyCart(),
   paymentFailed: false,
   address: 'ул. Пушкинская, 120А',
+  contexts: defaultContexts(),
   checkoutTime: 'Ближайшее время',
   checkoutPayment: 'Банковская карта',
   orders: [],
@@ -115,7 +121,8 @@ const initialSession: Session = {
 
 function readSession(): Session {
   try {
-    const stored = { ...initialSession, ...JSON.parse(sessionStorage.getItem('restprofi-demo-v2') || '{}') }
+    const saved = JSON.parse(sessionStorage.getItem('restprofi-demo-v2') || '{}')
+    const stored = { ...initialSession, ...saved }
     const oldCart = stored.cart as Record<BrandId, number | CartLines>
     stored.cart = Object.fromEntries((Object.keys(brands) as BrandId[]).map((brand) => {
       const value = oldCart?.[brand]
@@ -124,6 +131,17 @@ function readSession(): Session {
     })) as Record<BrandId, CartLines>
     delete stored.cartItem
     if (!Array.isArray(stored.orders)) stored.orders = []
+    const contexts = { ...defaultContexts(), ...saved.contexts }
+    if (!saved.contexts && stored.brand in brands) contexts[stored.brand as BrandId] = { service: stored.service, address: stored.address }
+    for (const brand of Object.keys(brands) as BrandId[]) {
+      const context = contexts[brand]
+      if (context.service === 'pickup' && !pickupLocations[brand].includes(context.address)) contexts[brand] = { service: 'pickup', address: pickupLocations[brand][0] ?? '' }
+      if (context.service === 'delivery' && !context.address?.trim()) contexts[brand] = { service: 'delivery', address: demoDeliveryAddresses[0] }
+    }
+    stored.contexts = contexts
+    const activeContext = contexts[stored.brand as BrandId] ?? contexts.pitcofe
+    stored.service = activeContext.service
+    stored.address = activeContext.address
     stored.profile = { ...initialSession.profile, ...stored.profile }
     stored.checkoutTime ||= initialSession.checkoutTime
     stored.checkoutPayment ||= initialSession.checkoutPayment
@@ -165,7 +183,7 @@ export function App() {
       setSession((value) => ({
         ...value,
         brand: fromRoute,
-        address: value.service === 'pickup' ? (pickupLocations[fromRoute][0] ?? '') : demoDeliveryAddresses[0],
+        ...value.contexts[fromRoute],
         paymentFailed: false,
       }))
     }
@@ -182,7 +200,13 @@ export function App() {
     window.location.hash = next
     window.scrollTo({ top: 0, behavior: 'instant' })
   }
-  const update = (patch: Partial<Session>) => setSession((value) => ({ ...value, ...patch }))
+  const update = (patch: Partial<Session>) => setSession((value) => {
+    const brand = patch.brand ?? value.brand
+    if (brand !== value.brand) return { ...value, ...patch, brand, ...value.contexts[brand], paymentFailed: false }
+    const service = patch.service ?? value.service
+    const address = patch.address ?? value.address
+    return { ...value, ...patch, contexts: { ...value.contexts, [brand]: { service, address } } }
+  })
   const cartCount = itemCount(session.cart[session.brand])
 
   const page = useMemo(() => {
@@ -257,7 +281,7 @@ function MiniDishArt({ item }: { item: { id: string; art: string } }) {
 
 function HomeScreen({ go, session, update }: { go: Go; session: Session; update: (p: Partial<Session>) => void }) {
   const pick = (id: BrandId) => {
-    update({ brand: id, address: session.service === 'pickup' ? (pickupLocations[id][0] ?? '') : demoDeliveryAddresses[0], paymentFailed: false })
+    update({ brand: id })
     go(`/brand/${id}`)
   }
   return <div className="screen home-screen">
@@ -280,7 +304,7 @@ function HomeScreen({ go, session, update }: { go: Go; session: Session; update:
 
 function OrderBrandScreen({ go, session, update }: { go: Go; session: Session; update: (p: Partial<Session>) => void }) {
   const select = (brand: 'pitcofe' | 'mamadonna') => {
-    update({ brand, address: session.service === 'pickup' ? (pickupLocations[brand][0] ?? '') : demoDeliveryAddresses[0], paymentFailed: false })
+    update({ brand })
     go(`/brand/${brand}/format`)
   }
   return <div className="screen order-brand-screen"><ScreenHeader title="Заказ еды" go={go} /><p className="step">01 / Бренд</p><h1>Где хотите<br />сделать заказ?</h1><p className="lead">Меню, условия и корзина останутся внутри выбранного бренда.</p><div className="brand-stack order-brand-list">{(['pitcofe', 'mamadonna'] as const).map((id) => <button className={`brand-row brand-${brands[id].tone}`} key={id} onClick={() => select(id)}><BrandMark id={id} /><span><b>{brands[id].name}</b><small>{brands[id].note}</small></span><ChevronRight /></button>)}</div><div className="info-note"><ShoppingBag /><span><b>Корзины не смешиваются</b><small>Переход в другой бренд откроет его собственный контекст.</small></span></div></div>

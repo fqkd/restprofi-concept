@@ -9,6 +9,7 @@ import {
   useMap,
 } from "react-leaflet";
 import { divIcon } from "leaflet";
+import type { Marker as LeafletMarker } from "leaflet";
 import { LocateFixed, MapPin, Search, X } from "lucide-react";
 import "leaflet/dist/leaflet.css";
 import "./LocationMap.css";
@@ -61,6 +62,21 @@ function FocusPoint({ point }: { point?: MapPoint }) {
   return null;
 }
 
+function SelectionPopup({ selectedId, visibleIds, markers }: { selectedId: string; visibleIds: string[]; markers: React.RefObject<Record<string, LeafletMarker | null>> }) {
+  const map = useMap();
+  const previous = useRef(selectedId);
+  useEffect(() => {
+    if (previous.current === selectedId) return;
+    previous.current = selectedId;
+    map.closePopup();
+    if (visibleIds.includes(selectedId)) markers.current[selectedId]?.openPopup();
+  }, [map, markers, selectedId, visibleIds]);
+  useEffect(() => {
+    if (!visibleIds.includes(selectedId)) map.closePopup();
+  }, [map, selectedId, visibleIds]);
+  return null;
+}
+
 const markerIcon = (active: boolean, index: number) =>
   divIcon({
     className: "eh-map-marker-wrap",
@@ -80,6 +96,7 @@ export function LocationMap({
   const [position, setPosition] = useState<[number, number] | null>(null);
   const [geoStatus, setGeoStatus] = useState("");
   const itemRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const markerRefs = useRef<Record<string, LeafletMarker | null>>({});
   const normalized = query.trim().toLocaleLowerCase("ru");
 
   const visible = useMemo(() => {
@@ -167,6 +184,7 @@ export function LocationMap({
           />
           <AttributionControl prefix={false} />
           <FocusPoint point={selected} />
+          <SelectionPopup selectedId={selectedId} visibleIds={visible.map((point) => point.id)} markers={markerRefs} />
           {position && (
             <CircleMarker
               center={position}
@@ -184,7 +202,9 @@ export function LocationMap({
           {visible.map((point, index) => (
             <Marker
               key={point.id}
+              ref={(node) => { markerRefs.current[point.id] = node; }}
               position={[point.lat, point.lng]}
+              title={`${point.name}, ${point.address}`}
               icon={markerIcon(point.id === selected.id, index)}
               eventHandlers={{ click: () => onSelect(point) }}
             >

@@ -82,3 +82,18 @@ test('пустые прямые ссылки не создают позиции 
   await page.goto('#/cart/pitcofe')
   await expect(page.getByRole('heading', { name: 'Корзина пока пуста' })).toBeVisible()
 })
+
+test('точка самовывоза не переносится в другой бренд и восстанавливается после перезагрузки', async ({ page }) => {
+  await page.goto('#/brand/pitcofe/format')
+  await page.getByRole('button', { name: /Самовывоз/ }).click()
+  await page.getByRole('button', { name: /Питькофе «Алиса»/ }).click()
+  await page.goto('#/brand/esttort/format')
+  await page.getByRole('button', { name: /Самовывоз/ }).click()
+  await expect(page.getByRole('button', { name: /Кондитерский дом «ЕстьТорт»/ })).toBeVisible()
+  await page.getByRole('button', { name: /Смотреть доступное меню/ }).click()
+  await expect(page.getByRole('button', { name: /Ворошиловский проспект, 12/ })).toBeVisible()
+  await page.reload()
+  await expect(page.getByRole('button', { name: /Ворошиловский проспект, 12/ })).toBeVisible()
+  await page.goto('#/brand/pitcofe/menu')
+  await expect(page.getByRole('button', { name: /проспект Космонавтов, 2\/2/ })).toBeVisible()
+})
