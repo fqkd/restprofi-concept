@@ -306,6 +306,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .two-fields button { text-align: left; padding: 14px !important; background: white; border: 1px solid var(--line); border-radius: 15px; display: flex; flex-direction: column; }
 .two-fields small { font-size: 9px; color: #776e69; }
 .two-fields b { font-size: 12px; margin-top: 4px; }
+.two-fields label { min-width: 0; padding: 10px; background: white; border: 1px solid var(--line); border-radius: 15px; display: grid; gap: 6px; }
+.two-fields select, .two-fields input { min-width: 0; width: 100%; min-height: 36px; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 12px; }
+.field-hint { font-size: 11px; line-height: 1.5; color: #6e6065; }
+.profile-field textarea { min-height: 78px; padding: 13px 15px; resize: vertical; border: 1px solid var(--line); border-radius: 16px; background: white; color: var(--ink); font: inherit; }
 .cake-success { background: #663758; color: #fff4f5; }
 .cake-success .status-icon { background: #f1c2d5; color: #663758; }
 .cake-success > p:not(.eyebrow) { color: #d9becb; }
@@ -322,9 +326,14 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .history-card footer { display: flex; justify-content: space-between; align-items: center; }
 .history-card footer button { display: flex; align-items: center; gap: 7px; background: var(--lime); padding: 9px 12px; border-radius: 12px; font-size: 10px; font-weight: 700; }
 .history-card footer svg { width: 15px; }
+.history-screen > h2 { margin: 24px 0 10px; font-size: 16px; }
+.history-screen .history-card + .history-card { margin-top: 10px; }
+.request-card > p { color: #d1cdc6; font-size: 10px; line-height: 1.5; margin: -10px 0 18px; }
+.request-card > div > svg { flex: 0 0 22px; color: var(--lime); }
 .profile-field { display: grid; gap: 7px; margin-top: 14px; }
 .profile-field span { font-size: 10px; font-weight: 700; color: #706a62; text-transform: uppercase; letter-spacing: .08em; }
 .profile-field input { width: 100%; min-height: 54px; padding: 0 15px; border: 1px solid var(--line); border-radius: 16px; background: white; color: var(--ink); outline: 0; }
+.profile-field select { width: 100%; min-height: 54px; padding: 0 12px; border: 1px solid var(--line); border-radius: 16px; background: white; color: var(--ink); font: inherit; }
 .profile-links { display: grid; gap: 8px; margin-top: 28px; }
 .profile-links button { width: 100%; display: grid; grid-template-columns: 34px minmax(0,1fr) 20px; gap: 10px; align-items: center; padding: 14px !important; text-align: left; border: 1px solid var(--line); border-radius: 17px; background: rgba(255,255,255,.7); }
 .profile-links button > svg { width: 19px; }
