@@ -19,6 +19,13 @@ test('заказ сохраняется после ошибки и заверш�
   await expect(page.getByText('Банковская карта')).toBeVisible()
   await page.getByRole('button', { name: /Подтвердить заказ/ }).click()
   await expect(page.getByRole('heading', { name: 'Заказ сохранён' })).toBeVisible()
+  await page.getByRole('button', { name: 'История заказов' }).click()
+  await page.locator('.history-card').filter({ hasText: 'Ньокки' }).getByRole('button', { name: 'Подробнее' }).click()
+  await expect(page.getByRole('heading', { name: 'Питькофе' })).toBeVisible()
+  await expect(page.getByText('Банковская карта')).toBeVisible()
+  await expect(page.getByText('Сумма товаров')).toBeVisible()
+  await page.reload()
+  await expect(page.getByRole('button', { name: 'Повторить заказ' })).toBeVisible()
 })
 
 test('бронирование доходит до подтверждения', async ({ page }) => {

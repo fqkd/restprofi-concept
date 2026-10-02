@@ -45,7 +45,7 @@ const prototypeRoutes = [
   '#/cart/pitcofe', '#/cart/mamadonna', '#/cart/esttort',
   '#/checkout/pitcofe', '#/checkout/mamadonna', '#/checkout/esttort',
   '#/payment-error', '#/booking', '#/booking/success', '#/cake', '#/cake/success',
-  '#/repeat', '#/loyalty', '#/offers', '#/profile', '#/history', '#/search',
+  '#/repeat', '#/loyalty', '#/offers', '#/profile', '#/history', '#/history/order/unknown', '#/search',
 ]
 const prototypeSizes = [
   { width: 360, height: 800 },
@@ -156,7 +156,8 @@ report.scenarios.push({ name: 'заказ → ошибка оплаты → во
 await flow.getByRole('button', { name: 'История заказов' }).click()
 await flow.getByRole('heading', { name: 'Ваши действия' }).waitFor()
 if (await flow.locator('.history-card').count() !== 1) errors.push('history: successful order was not recorded')
-await flow.getByRole('button', { name: /Повторить/ }).click()
+await flow.locator('.history-card').filter({ hasText: 'Ньокки' }).getByRole('button', { name: 'Подробнее' }).click()
+await flow.getByRole('button', { name: 'Повторить заказ' }).click()
 await flow.getByRole('button', { name: 'Проверить и повторить' }).click()
 await flow.getByRole('button', { name: 'Открыть корзину' }).click()
 await flow.getByText('Ньокки с говяжьими щёчками').waitFor()
